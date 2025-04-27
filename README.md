@@ -28,7 +28,7 @@ Simulated Wallet Challenges (leave for Updraft):
 Connected Wallet Challenges:
 - Tenderly setup (virtual testnet setup)
   - eternal safe setup
-  - https://eternalsafe.eth.limo?chainId=84532&chain=Base%20Sepolia&shortName=base-sepolia&rpc=https%3A%2F%2Fsepolia.base.org&currency=ETH&symbol=ETH&expAddr=https%3A%2F%2Fsepolia.basescan.org%2Faddress%2F%7B%7Baddress%7D%7D&expTx=https%3A%2F%2Fsepolia.basescan.org%2Ftx%2F%7B%7Bhash%7D%7D&l2=true&testnet=true
+  - https://eternalsafe.eth.limo
 - EOA - Oh no! Safe Wallet is down! 
   - Uniswap swap
   - EIP-712 signature
