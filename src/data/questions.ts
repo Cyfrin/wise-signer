@@ -892,7 +892,7 @@ Please sign this transaction if doing so will bring you closer to executing, oth
     },
     "domain": {
         "chainId": "0xa4b1",
-        "verifyingContract": "${MULTI_SIGNATURE_SIGNER_WALLET}
+        "verifyingContract": "${MULTI_SIGNATURE_SIGNER_WALLET}"
     },
     "primaryType": "SafeTx",
     "message": {
