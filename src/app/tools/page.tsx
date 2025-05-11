@@ -28,6 +28,11 @@ const Tools = () => {
                     description: "Ethereum calldata decoder by Deth"
                 },
                 {
+                    name: "quickcast.dev",
+                    url: "https://quickcast.dev/cast-calldata-decode",
+                    description: "Like Foundry's cast, but online"
+                },
+                {
                     name: "Foundry Book",
                     url: "https://book.getfoundry.sh/",
                     description: "Documentation for Foundry, including calldata tools"
