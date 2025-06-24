@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FaLightbulb, FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { FaLightbulb, FaChevronLeft, FaChevronRight, FaCheck } from "react-icons/fa";
 import markdownComponents from "@/components/MarkdownComponents";
 import ReactMarkdown from 'react-markdown';
 
@@ -40,9 +40,13 @@ const FeedbackComponent: React.FC<FeedbackComponentProps> = ({
 
 
     return (
-        <div className={`bg-blue-50 border border-blue-200 rounded-lg p-6 ${className}`}>
+        <div className={`${isCorrect ? 'bg-green-100 border-green-500' : 'bg-red-50 border-red-200'} border rounded-lg p-6 ${className}`}>
             <div className="flex items-start">
-                <FaLightbulb className="text-yellow-500 mt-1 flex-shrink-0" />
+                {isCorrect ? (
+                    <FaCheck className="text-green-500 mt-1 flex-shrink-0" />
+                ) : (
+                    <FaLightbulb className="text-yellow-500 mt-1 flex-shrink-0" />
+                )}
                 <div className="ml-4">
                     <h3 className="text-lg font-medium text-gray-900">
                         That's {isCorrect ? "correct" : "incorrect"}. Let's see why:
