@@ -10,13 +10,13 @@ const ManualSetupInstructions = ({ onBack }: { onBack: () => void }) => {
         displayName: false,
     });
 
-    const copyToClipboard = (text: string, field: string) => {
-        navigator.clipboard.writeText(text);
-        setCopied({ ...copied, [field]: true });
-        setTimeout(() => {
-            setCopied({ ...copied, [field]: false });
-        }, 2000);
-    };
+    const copyToClipboard = (text: string, field: keyof typeof copied) => {
+    navigator.clipboard.writeText(text);
+    setCopied(prev => ({ ...prev, [field]: true }));
+    setTimeout(() => {
+        setCopied(prev => ({ ...prev, [field]: false }));
+    }, 2000);
+};
 
     return (
         <div className="bg-zinc-800 p-6 rounded-lg max-w-3xl">
