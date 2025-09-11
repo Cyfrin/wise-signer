@@ -70,7 +70,7 @@ const Tools = () => {
       tools: [
         {
           name: "Verify Multi-Sig Signatures",
-          url: "https://updraft.cyfrin.io/courses/wallets/wallets/verify-multi-sig-signatures?lesson_format=video",
+          url: "https://updraft.cyfrin.io/career-tracks/web3-wallet-security",
           description: "Learn how to verify multi-signature wallet signatures",
         },
       ],
