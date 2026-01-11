@@ -443,7 +443,7 @@ ${METAMASK_DELEGATOR}
 Function:execute((address,uint256,bytes))
 \`\`\`
 
-Most wallets don't show this, but the code at address \`${METAMASK_DELEGATOR}\` is the code your wallet is being set to. Wallets like MetaMask automatically set this code to be the ${METAMASK_DELEGATOR} code, which isnot malicious. However, you still want to verify the list of transactions as someone could still trick you into signing soething you shouldn't.`,
+Most wallets don't show this, but the code at address \`${METAMASK_DELEGATOR}\` is the code your wallet is being set to. Wallets like MetaMask automatically set this code to be the ${METAMASK_DELEGATOR} code, which isnot malicious. However, you still want to verify the list of transactions as someone could still trick you into signing something you shouldn't.`,
 
             `With this power, we can batch transactions together, like how we saw a list of transactions in our wallet. If you decode the two transactions using some of the tools we've learned (ie, [tools.cyfrin.io](https://tools.cyfrin.io/abi-encoding), [swiss-knife](https://calldata.swiss-knife.xyz/decoder), [foundry's cast](https://book.getfoundry.sh/) or [deth tools](https://tools.deth.net/calldata-decoder)), you'll see:
 
