@@ -138,7 +138,7 @@ Issued At: ${new Date().toISOString()}`
         question: `Execute or reject this transaction.`,
         questionContext: `This transaction requires your Trezor hardware wallet. You're attempting to send your friend \`${TREZOR_FRIEND_WALLET}\` \`0.5 ETH\` on the Ethereum chain. Assume your wallet is \`${YOUR_WALLET}\` which is the #1 wallet from the standard ETH derivation path.
         
-Only trust what the wallet shows you. If sending this transaction will get you want you want, sign it!`,
+Only trust what the wallet shows you. If sending this transaction will get you what you want, sign it!`,
         type: "signOrReject",
         expectedAction: "sign",
         walletType: "trezor",
@@ -170,7 +170,7 @@ Our website told us it would send \`5 ETH\`, but the wallet populated with the c
         question: `Execute or reject this transaction.`,
         questionContext: `This transaction requires your trezor wallet, and it's similar to the last question! You're attempting to send your friend who has address: \`${TREZOR_FRIEND_WALLET}\` \`0.5 ETH\` on the Ethereum chain. Assume your wallet is \`${YOUR_WALLET}\` which is the #1 wallet from the standard ETH derivation path.
         
-Only trust what the hardware wallet shows you. If sending this transaction will get you want you want, sign it!`,
+Only trust what the hardware wallet shows you. If sending this transaction will get you what you want, sign it!`,
         type: "signOrReject",
         expectedAction: "reject",
         walletType: "trezor",
@@ -208,7 +208,7 @@ Attackers can use sophisticated tools to create addresses that look similar, and
         question: `Execute or reject this transaction.`,
         questionContext: `You're attempting to send your friend who has address: \`${TREZOR_FRIEND_WALLET}\` \`100 USDC.e\` (Bridged USDC) on the ZKsync Era chain. Assume your wallet is \`${YOUR_WALLET}\`.
         
-Only trust what the wallet shows you. If sending this transaction will get you want you want, sign it!`,
+Only trust what the wallet shows you. If sending this transaction will get you what you want, sign it!`,
         type: "signOrReject",
         expectedAction: "reject",
         walletType: "metamask",
@@ -443,7 +443,7 @@ ${METAMASK_DELEGATOR}
 Function:execute((address,uint256,bytes))
 \`\`\`
 
-Most wallets don't show this, but the code at address \`${METAMASK_DELEGATOR}\` is the code your wallet is being set to. Wallets like MetaMask automatically set this code to be the ${METAMASK_DELEGATOR} code, which isnot malicious. However, you still want to verify the list of transactions as someone could still trick you into signing soething you shouldn't.`,
+Most wallets don't show this, but the code at address \`${METAMASK_DELEGATOR}\` is the code your wallet is being set to. Wallets like MetaMask automatically set this code to be the ${METAMASK_DELEGATOR} code, which isnot malicious. However, you still want to verify the list of transactions as someone could still trick you into signing something you shouldn't.`,
 
             `With this power, we can batch transactions together, like how we saw a list of transactions in our wallet. If you decode the two transactions using some of the tools we've learned (ie, [tools.cyfrin.io](https://tools.cyfrin.io/abi-encoding), [swiss-knife](https://calldata.swiss-knife.xyz/decoder), [foundry's cast](https://book.getfoundry.sh/) or [deth tools](https://tools.deth.net/calldata-decoder)), you'll see:
 
