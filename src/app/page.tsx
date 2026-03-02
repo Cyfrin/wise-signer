@@ -13,12 +13,22 @@ export default function Home() {
           before signing them. Master multi-sig and hardware wallet security in a
           safe environment.
         </p>
-        <a
-          href="/simulated/questions/1"
-          className="bg-blue-600 text-white px-8 py-3 rounded-lg text-lg font-medium hover:bg-blue-700 transition"
-        >
-          Start Training Now
-        </a>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <a
+            href="/simulated/questions/1"
+            className="bg-blue-600 text-white px-8 py-3 rounded-lg text-lg font-medium hover:bg-blue-700 transition"
+          >
+            Start Training Now
+          </a>
+          <a
+            href="https://snaps.metamask.io/snap/npm/wise-signer-snap/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="border border-orange-500 text-orange-400 px-8 py-3 rounded-lg text-lg font-medium hover:bg-orange-500/10 transition"
+          >
+            Install MetaMask Snap
+          </a>
+        </div>
       </div>
 
       {/* How to Play Section */}
