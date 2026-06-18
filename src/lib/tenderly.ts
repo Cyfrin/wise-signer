@@ -100,6 +100,13 @@ export async function fundAddress(
   await rpcCall(adminRpcUrl, "tenderly_setBalance", [[address], toWeiHex(eth)]);
 }
 
+/** Read the chain id the RPC actually reports — vnets pick their own (often a
+ * 999-prefixed variant of the forked network), so never assume it. */
+export async function getChainId(rpcUrl: string): Promise<number> {
+  const hex = await rpcCall<string>(rpcUrl, "eth_chainId", []);
+  return parseInt(hex, 16);
+}
+
 /** Set an ERC-20 balance for an address on the vnet (Tenderly cheat method). */
 export async function setErc20Balance(
   adminRpcUrl: string,

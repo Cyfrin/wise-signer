@@ -80,7 +80,11 @@ export default function TenderlyRunner() {
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const onRightChain = chainId === CUSTOM_CHAIN_ID;
+  // Use the vnet's real chain id (detected at setup), not a hardcoded one.
+  const targetChainId = networkInfo?.chainId
+    ? parseInt(networkInfo.chainId, 16) || CUSTOM_CHAIN_ID
+    : CUSTOM_CHAIN_ID;
+  const onRightChain = chainId === targetChainId;
 
   // Mint a seed once we're connected on the right chain.
   useEffect(() => {
@@ -141,7 +145,7 @@ export default function TenderlyRunner() {
           to: challenge.request.to,
           value: challenge.request.value,
           data: challenge.request.data,
-          chainId: CUSTOM_CHAIN_ID,
+          chainId: targetChainId,
         });
       } else {
         await signTypedDataAsync({
@@ -232,7 +236,7 @@ export default function TenderlyRunner() {
             testnet to continue.
           </p>
           <div className="mt-6 flex flex-col items-center gap-3">
-            <Button onClick={() => switchChain({ chainId: CUSTOM_CHAIN_ID })}>
+            <Button onClick={() => switchChain({ chainId: targetChainId })}>
               Switch to it
             </Button>
             <Button variant="secondary" onClick={addNetworkToWallet}>

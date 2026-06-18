@@ -14,7 +14,7 @@ import {
 } from "react-icons/fa";
 import ManualSetupInstructions from "@/components/ManualSetupInstructions";
 import { VIRTUAL_NET_DISPLAY_NAME } from "@/app/constants";
-import { provisionVnet } from "@/lib/tenderly";
+import { provisionVnet, getChainId } from "@/lib/tenderly";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button, buttonVariants } from "@/components/ui/Button";
@@ -42,7 +42,6 @@ const helpLink =
 export default function WelcomePage() {
   const [setupOption, setSetupOption] = useState<SetupOption>("");
   const [endpointUrl, setEndpointUrl] = useState("");
-  const [adminUrl, setAdminUrl] = useState("");
   const [apiKey, setApiKey] = useState("");
   const [accountSlug, setAccountSlug] = useState("");
   const [projectSlug, setProjectSlug] = useState("");
@@ -60,7 +59,6 @@ export default function WelcomePage() {
         const parsed = JSON.parse(stored) as NetworkInfo;
         setNetworkInfo(parsed);
         setEndpointUrl(parsed.rpcUrl || "");
-        setAdminUrl(parsed.adminRpcUrl || "");
       } catch (e) {
         console.error("Failed to parse stored network info:", e);
       }
@@ -76,7 +74,6 @@ export default function WelcomePage() {
   const reset = () => {
     setSetupOption("");
     setEndpointUrl("");
-    setAdminUrl("");
     setApiKey("");
     setError(null);
     setShowManualSetup(false);
@@ -89,23 +86,33 @@ export default function WelcomePage() {
     reset();
   };
 
-  const handleExistingEndpoint = () => {
-    if (!endpointUrl.trim()) return setError("Enter your public RPC endpoint URL.");
-    if (!adminUrl.trim())
-      return setError("Enter your admin RPC URL — it's required to fund your test wallet.");
+  // Read the vnet's real chain id from its RPC (vnets pick their own) and save.
+  const finalize = async (rpcUrl: string, adminRpcUrl: string) => {
+    try {
+      const id = await getChainId(rpcUrl);
+      save({
+        rpcUrl,
+        adminRpcUrl,
+        chainId: `0x${id.toString(16)}`,
+        name: VIRTUAL_NET_DISPLAY_NAME,
+      });
+    } catch {
+      setError("Couldn't reach that RPC to read its chain ID. Double-check the URL.");
+      setSetupStage("error");
+    }
+  };
+
+  const handleExistingEndpoint = async () => {
+    if (!endpointUrl.trim()) return setError("Enter your vnet's Admin RPC URL.");
     try {
       new URL(endpointUrl);
-      new URL(adminUrl);
     } catch {
-      return setError("One of those doesn't look like a valid URL.");
+      return setError("That doesn't look like a valid URL.");
     }
     setError(null);
-    save({
-      rpcUrl: endpointUrl.trim(),
-      adminRpcUrl: adminUrl.trim(),
-      chainId: "0x57135",
-      name: VIRTUAL_NET_DISPLAY_NAME,
-    });
+    setIsLoading(true);
+    await finalize(endpointUrl.trim(), endpointUrl.trim());
+    setIsLoading(false);
   };
 
   const handleCreateNetwork = async () => {
@@ -118,13 +125,7 @@ export default function WelcomePage() {
     setError(null);
     try {
       const info = await provisionVnet(apiKey.trim(), accountSlug.trim(), projectSlug.trim());
-      save({
-        rpcUrl: info.publicRpcUrl,
-        adminRpcUrl: info.adminRpcUrl,
-        chainId: info.chainIdHex,
-        networkId: info.vnetId,
-        name: VIRTUAL_NET_DISPLAY_NAME,
-      });
+      await finalize(info.publicRpcUrl, info.adminRpcUrl ?? info.publicRpcUrl);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to create the network.");
       setSetupStage("error");
@@ -232,21 +233,21 @@ export default function WelcomePage() {
           <BackButton onClick={reset} />
           <h2 className="mt-4 font-display text-2xl font-semibold text-bone">Use an existing network</h2>
           <p className="mt-2 text-bone-dim">
-            Paste both RPC URLs from your vnet. The admin RPC is required — it&apos;s
-            what funds your test wallet with ETH and tokens.
+            Paste your vnet&apos;s <strong className="text-bone">Admin RPC URL</strong> —
+            it works for everything (your wallet and funding), and we&apos;ll read the
+            chain ID from it automatically.
           </p>
           <div className="mt-6 space-y-4">
             <div>
-              <label className={labelClass}>Public RPC URL</label>
-              <input type="url" value={endpointUrl} onChange={(e) => setEndpointUrl(e.target.value)} placeholder="https://virtual.sepolia.rpc.tenderly.co/…" className={inputClass} />
-            </div>
-            <div>
               <label className={labelClass}>Admin RPC URL</label>
-              <input type="url" value={adminUrl} onChange={(e) => setAdminUrl(e.target.value)} placeholder="https://virtual.sepolia.rpc.tenderly.co/…/admin" className={inputClass} />
+              <input type="url" value={endpointUrl} onChange={(e) => setEndpointUrl(e.target.value)} placeholder="https://virtual.sepolia.rpc.tenderly.co/…/admin" className={inputClass} />
             </div>
             {error && <p className="text-sm text-reject">{error}</p>}
           </div>
-          <Button className="mt-6" onClick={handleExistingEndpoint}>Save network</Button>
+          <Button className="mt-6" onClick={handleExistingEndpoint} disabled={isLoading}>
+            {isLoading ? <FaSpinner className="animate-spin" size={13} /> : null}
+            Save network
+          </Button>
         </Card>
       );
     }

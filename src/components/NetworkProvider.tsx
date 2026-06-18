@@ -105,7 +105,7 @@ export const NetworkProvider: React.FC<NetworkProviderProps> = ({
             try {
                 // Configure the wagmi client with the custom chain
                 const customChain = {
-                    id: CUSTOM_CHAIN_ID,
+                    id: parseInt(info.chainId, 16) || CUSTOM_CHAIN_ID,
                     name: info.name || VIRTUAL_NET_DISPLAY_NAME,
                     iconUrl: '/wise-signer.png',
                     iconBackground: '#fff',
