@@ -32,7 +32,12 @@ export interface TypedDataRequest {
   message: Record<string, unknown>;
 }
 
-export type WalletRequest = TxRequest | TypedDataRequest;
+export interface PersonalSignRequest {
+  kind: "personalSign";
+  message: string;
+}
+
+export type WalletRequest = TxRequest | TypedDataRequest | PersonalSignRequest;
 
 export interface ReviewField {
   label: string;
@@ -53,25 +58,42 @@ export interface Challenge {
   note?: string; // standing context (token address, decimals, funding)
 }
 
-// Real Sepolia tokens — present on the forked vnet, so the wallet shows real
-// metadata and we can fund balances with tenderly_setErc20Balance.
-const USDC: Address = "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238"; // Circle USDC, 6 decimals
-const WETH: Address = "0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14"; // WETH9, 18 decimals
-// Mainnet Uniswap V2 router — a recognizable "official" reference label.
-const UNISWAP_V2_ROUTER: Address = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D";
+// Real Sepolia USDC — present on the forked vnet, so the wallet shows real
+// metadata and we can fund a balance with tenderly_setErc20Balance.
+const USDC: Address = "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238"; // 6 decimals
 
 const USDC_NOTE = `On this testnet, USDC is the real contract at ${USDC} with 6 decimals — the same as mainnet USDC. Your wallet has been funded with test USDC to spend.`;
-const WETH_NOTE = `On this testnet, WETH is the real contract at ${WETH} with 18 decimals. Your wallet has been funded with test WETH.`;
 
 const CONTACTS = ["Dani", "Mae", "Theo", "Priya", "Kofi", "Lena"] as const;
+
+const ZERO: Address = "0x0000000000000000000000000000000000000000";
 
 const erc20Abi = [
   { name: "transfer", type: "function", stateMutability: "nonpayable", inputs: [{ name: "to", type: "address" }, { name: "amount", type: "uint256" }], outputs: [{ type: "bool" }] },
   { name: "approve", type: "function", stateMutability: "nonpayable", inputs: [{ name: "spender", type: "address" }, { name: "amount", type: "uint256" }], outputs: [{ type: "bool" }] },
-  { name: "setApprovalForAll", type: "function", stateMutability: "nonpayable", inputs: [{ name: "operator", type: "address" }, { name: "approved", type: "bool" }], outputs: [] },
   { name: "claim", type: "function", stateMutability: "nonpayable", inputs: [], outputs: [] },
-  { name: "swapExactTokensForTokens", type: "function", stateMutability: "nonpayable", inputs: [{ name: "amountIn", type: "uint256" }, { name: "amountOutMin", type: "uint256" }, { name: "path", type: "address[]" }, { name: "to", type: "address" }, { name: "deadline", type: "uint256" }], outputs: [{ type: "uint256[]" }] },
 ] as const;
+
+const SAFE_TX_TYPES = {
+  SafeTx: [
+    { name: "to", type: "address" },
+    { name: "value", type: "uint256" },
+    { name: "data", type: "bytes" },
+    { name: "operation", type: "uint8" },
+    { name: "safeTxGas", type: "uint256" },
+    { name: "baseGas", type: "uint256" },
+    { name: "gasPrice", type: "uint256" },
+    { name: "gasToken", type: "address" },
+    { name: "refundReceiver", type: "address" },
+    { name: "nonce", type: "uint256" },
+  ],
+};
+
+const FAKE_DOMAINS: Record<string, string> = {
+  "app.uniswap.org": "app.uniswaq.org",
+  "app.aave.com": "app-aave.com",
+  "opensea.io": "0pensea.io",
+};
 
 const usdc = (n: number) => parseUnits(String(n), 6);
 
@@ -162,62 +184,48 @@ function tokenApproval(rng: Rng, player: Address): Challenge {
   };
 }
 
-function approvalForAll(rng: Rng, player: Address): Challenge {
-  const marketplace = randomHexAddress(rng);
-  const attacker = randomHexAddress(rng);
+function safeTxSignature(rng: Rng, player: Address, chainId: number): Challenge {
+  const safe = randomHexAddress(rng);
+  const recipient = randomHexAddress(rng);
+  const amount = pick(rng, [250, 500, 1000]);
+  const nonce = randInt(rng, 1, 40);
   const trap = chance(rng);
-  const operator = trap ? attacker : marketplace;
+  const operation = trap ? 1 : 0; // 1 = DELEGATECALL — the Bybit-style trap
   return {
     level: 4,
-    title: "Grant collection access",
-    origin: "market.example",
-    intent: `List an NFT for sale. The marketplace's operator contract is ${marketplace} and needs approval to move items in this collection.`,
+    title: "Sign a Safe multisig transaction",
+    note: USDC_NOTE,
+    origin: "app.safe.global",
+    intent: `You're a signer on a 2-of-3 Safe at ${safe}. Approve sending ${amount} USDC to ${recipient}. A normal token transfer uses operation 0 (a CALL).`,
     fields: [
-      { label: "Collection", value: randomHexAddress(rng), block: true },
-      { label: "Function", value: "setApprovalForAll(operator, true)" },
-      { label: "Operator", value: operator, block: true },
+      { label: "Type", value: "EIP-712 · SafeTx" },
+      { label: "Safe", value: safe, block: true },
+      { label: "To (token)", value: USDC, block: true },
+      { label: "Operation", value: operation === 1 ? "1 — DELEGATECALL" : "0 — CALL" },
+      { label: "Nonce", value: String(nonce) },
     ],
     request: {
-      kind: "tx",
-      to: randomHexAddress(rng),
-      data: encodeFunctionData({ abi: erc20Abi, functionName: "setApprovalForAll", args: [operator, true] }),
+      kind: "typedData",
+      domain: { chainId, verifyingContract: safe },
+      types: SAFE_TX_TYPES,
+      primaryType: "SafeTx",
+      message: {
+        to: USDC,
+        value: 0n,
+        data: encodeFunctionData({ abi: erc20Abi, functionName: "transfer", args: [recipient, usdc(amount)] }),
+        operation,
+        safeTxGas: 0n,
+        baseGas: 0n,
+        gasPrice: 0n,
+        gasToken: ZERO,
+        refundReceiver: ZERO,
+        nonce: BigInt(nonce),
+      },
     },
     expected: trap ? "reject" : "sign",
     why: trap
-      ? `setApprovalForAll hands an operator control over your entire collection. This operator isn't the marketplace you were told about — it's unknown. Reject it.`
-      : `The operator matches the marketplace's published contract, and setApprovalForAll is how listings work. Acceptable for a marketplace you trust.`,
-  };
-}
-
-function uniswapSwap(rng: Rng, player: Address): Challenge {
-  const amountIn = pick(rng, [0.5, 1, 2]);
-  const trap = chance(rng);
-  const router = trap ? lookAlike(rng, UNISWAP_V2_ROUTER) : UNISWAP_V2_ROUTER;
-  const deadline = BigInt(1_900_000_000);
-  return {
-    level: 5,
-    title: "Swap on a DEX",
-    note: WETH_NOTE,
-    origin: "app.uniswap.org",
-    intent: `Swap ${amountIn} WETH for USDC on Uniswap. The official Uniswap V2 router is ${UNISWAP_V2_ROUTER}.`,
-    fields: [
-      { label: "Router", value: router, block: true },
-      { label: "Function", value: "swapExactTokensForTokens(...)" },
-      { label: "Swap", value: `${amountIn} WETH → USDC` },
-    ],
-    request: {
-      kind: "tx",
-      to: router,
-      data: encodeFunctionData({
-        abi: erc20Abi,
-        functionName: "swapExactTokensForTokens",
-        args: [parseEther(String(amountIn)), 0n, [WETH, USDC], player, deadline],
-      }),
-    },
-    expected: trap ? "reject" : "sign",
-    why: trap
-      ? `The router this swap is sent to is a look-alike of the real Uniswap router address — close at the ends, wrong in the middle. A fake router can route your funds anywhere.`
-      : `The transaction targets the official Uniswap V2 router and swaps the amount you intended. Safe to sign.`,
+      ? `The **operation is 1 (DELEGATECALL)** — the Safe would run the target's code in its own storage, which can rewrite the owners and drain everything. A token transfer must be operation **0 (CALL)**. This is the trick behind the Bybit hack ($1.4B).`
+      : `Operation is 0 (a normal CALL), the inner call is a standard USDC transfer to your intended recipient, and the Safe address matches. Safe to sign.`,
   };
 }
 
@@ -230,7 +238,7 @@ function permitSignature(rng: Rng, player: Address, chainId: number): Challenge 
   const value = trap ? maxUint256 : usdc(deposit);
   const deadline = BigInt(1_900_000_000);
   return {
-    level: 6,
+    level: 5,
     title: "Sign a gasless permit",
     note: USDC_NOTE,
     origin: "app.aave.com",
@@ -260,6 +268,39 @@ function permitSignature(rng: Rng, player: Address, chainId: number): Challenge 
     why: trap
       ? `A Permit signature is as powerful as an on-chain approval — and this one grants an unlimited allowance to an address that isn't the Aave pool. Signatures can drain you just like transactions.`
       : `The permit's spender matches Aave's pool and the value is scoped to your deposit. Signing this is equivalent to a sensible approval.`,
+  };
+}
+
+function siweSignature(rng: Rng, player: Address, chainId: number): Challenge {
+  const real = pick(rng, Object.keys(FAKE_DOMAINS));
+  const trap = chance(rng);
+  const claimed = trap ? (FAKE_DOMAINS[real] as string) : real;
+  const nonce = Math.floor(rng() * 1e16).toString(36);
+  const message = `${claimed} wants you to sign in with your Ethereum account:
+${player}
+
+Sign in with Ethereum to ${claimed}.
+
+URI: https://${claimed}
+Version: 1
+Chain ID: ${chainId}
+Nonce: ${nonce}
+Issued At: 2026-01-01T00:00:00.000Z`;
+  return {
+    level: 6,
+    title: "Sign in to a site",
+    origin: real,
+    intent: `You're signing in to ${real}. A sign-in message should name that exact domain — and nothing else.`,
+    fields: [
+      { label: "Type", value: "Sign-in · personal_sign" },
+      { label: "Message names", value: claimed },
+      { label: "You intended", value: real },
+    ],
+    request: { kind: "personalSign", message },
+    expected: trap ? "reject" : "sign",
+    why: trap
+      ? `The sign-in message authenticates you to ${claimed}, a look-alike of ${real}. Signing it can let an attacker log in as you on that other site. The domain in the message must match the site you're actually on.`
+      : `The message names ${real}, exactly the site you meant to sign in to. Safe to sign.`,
   };
 }
 
@@ -302,9 +343,9 @@ const GENERATORS: Generator[] = [
   nativeTransfer,
   tokenTransfer,
   tokenApproval,
-  approvalForAll,
-  uniswapSwap,
+  safeTxSignature,
   permitSignature,
+  siweSignature,
   maliciousCalldata,
 ];
 
@@ -326,7 +367,4 @@ export const SEED_TOKENS: {
   symbol: string;
   decimals: number;
   amount: bigint;
-}[] = [
-  { address: USDC, symbol: "USDC", decimals: 6, amount: 10_000n * 10n ** 6n },
-  { address: WETH, symbol: "WETH", decimals: 18, amount: 50n * 10n ** 18n },
-];
+}[] = [{ address: USDC, symbol: "USDC", decimals: 6, amount: 10_000n * 10n ** 6n }];
