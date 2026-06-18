@@ -51,6 +51,15 @@
     text-rendering: optimizeLegibility;
   }
 
+  /* Interactive controls get a pointer cursor */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [role="menuitem"],
+  summary,
+  label[for] {
+    cursor: pointer;
+  }
+
   ::selection {
     background: color-mix(in srgb, var(--color-brand) 32%, transparent);
     color: var(--color-bone);

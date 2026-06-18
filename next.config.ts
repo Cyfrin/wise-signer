@@ -8,6 +8,14 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
+
+  // pino (via wagmi/WalletConnect) optionally requires pino-pretty, which is
+  // never used in the browser. Resolve it to nothing to silence the warning.
+  webpack: (config) => {
+    config.resolve = config.resolve ?? {};
+    config.resolve.alias = { ...(config.resolve.alias ?? {}), "pino-pretty": false };
+    return config;
+  },
 };
 
 export default nextConfig;

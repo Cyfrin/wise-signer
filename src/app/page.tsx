@@ -143,12 +143,12 @@ export default function Home() {
             </Link>
           </Card>
 
-          <Card className="flex flex-col p-7">
+          <Card className="group flex flex-col p-7 transition-colors hover:border-hairline-strong">
             <div className="mb-5 flex items-center justify-between">
-              <span className="flex h-11 w-11 items-center justify-center rounded-lg border border-hairline-strong bg-raised text-muted">
+              <span className="flex h-11 w-11 items-center justify-center rounded-lg border border-brand/30 bg-brand/10 text-brand">
                 <FaCode size={18} />
               </span>
-              <Badge tone="caution">Coming soon</Badge>
+              <Badge tone="brand">New</Badge>
             </div>
             <h3 className="font-display text-xl font-semibold text-bone">
               Connected wallet
@@ -158,9 +158,12 @@ export default function Home() {
               real, escalating transactions that can&apos;t cost you anything.
               Randomized each run, so you can&apos;t coast on muscle memory.
             </p>
-            <span className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-faint">
-              In the workshop
-            </span>
+            <Link
+              href="/tenderly/welcome"
+              className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-brand transition-colors hover:text-brand-strong"
+            >
+              Set up &amp; connect <FaArrowRight size={12} />
+            </Link>
           </Card>
         </div>
       </section>

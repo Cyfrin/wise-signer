@@ -138,6 +138,12 @@ const VerifyInteractionsPage = () => {
                 <FaFileSignature size={14} /> Signatures
               </a>
               <a
+                href="#clear-signing"
+                className="inline-flex items-center gap-2 rounded-lg border border-hairline bg-surface px-4 py-2 text-sm text-bone-dim transition-colors hover:border-hairline-strong hover:text-bone"
+              >
+                <FaEye size={14} /> Clear signing
+              </a>
+              <a
                 href="#checklist"
                 className="inline-flex items-center gap-2 rounded-lg border border-hairline bg-surface px-4 py-2 text-sm text-bone-dim transition-colors hover:border-hairline-strong hover:text-bone"
               >
@@ -475,6 +481,80 @@ const VerifyInteractionsPage = () => {
                 </RedFlagListItem>
               </ul>
             </SubSection>
+          </SectionCard>
+
+          {/* Section: Clear signing standards */}
+          <SectionCard
+            id="clear-signing"
+            title="Clear signing: the standards fighting blind signing"
+            icon={FaEye}
+          >
+            <p>
+              Everything above is manual defense against{" "}
+              <strong className="text-bone">blind signing</strong> — approving
+              data you can&apos;t actually read. Clear signing is the
+              ecosystem&apos;s standards-based answer: wallets show a
+              human-readable description of what a transaction or message really
+              does, instead of raw hex or a bare hash.
+            </p>
+
+            <SubSection title="ERC-7730 — human-readable descriptors" icon={FaFileCode}>
+              <ul className="space-y-2">
+                <DetailListItem strongPrefix="What it is: ">
+                  An open standard (see{" "}
+                  <a
+                    className="text-brand hover:text-brand-strong underline underline-offset-2"
+                    href="https://clearsigning.org/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    clearsigning.org
+                  </a>
+                  ) where apps and protocols publish JSON &ldquo;descriptors&rdquo;
+                  that map a contract&apos;s functions and EIP-712 messages to
+                  plain-language display.
+                </DetailListItem>
+                <DetailListItem strongPrefix="What wallets do with it: ">
+                  Wallets (MetaMask, Ledger, Trezor, WalletConnect and others)
+                  use those descriptors to show &ldquo;Send 100 USDC to
+                  alice.eth&rdquo; instead of an opaque calldata blob. It&apos;s
+                  backed by the Ethereum Foundation, major wallets, and security
+                  firms including Cyfrin.
+                </DetailListItem>
+              </ul>
+            </SubSection>
+
+            <SubSection title="ERC-8213 — verifiable signing digests" icon={FaFileSignature}>
+              <ul className="space-y-2">
+                <DetailListItem strongPrefix="What it is: ">
+                  A newer, early-stage proposal (see{" "}
+                  <a
+                    className="text-brand hover:text-brand-strong underline underline-offset-2"
+                    href="https://erc8213.eth.limo/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    erc8213.eth.limo
+                  </a>
+                  ) for presenting a cryptographic fingerprint of exactly what
+                  you&apos;re signing, computed client-side so you can verify it
+                  independently.
+                </DetailListItem>
+                <DetailListItem strongPrefix="Why it matters here: ">
+                  It&apos;s the standards version of the Safe hash check you
+                  practice in this app — confirm the digest your wallet shows
+                  matches one you computed yourself, so a compromised UI
+                  can&apos;t slip a different payload past you.
+                </DetailListItem>
+              </ul>
+            </SubSection>
+
+            <p className="rounded-lg border border-caution/30 bg-caution/10 p-3 text-sm text-caution">
+              <FaInfoCircle size={15} className="mr-2 mb-0.5 inline" />
+              Clear signing only helps when a descriptor exists and your wallet
+              supports it — and a friendly label is not proof. Until it&apos;s
+              everywhere, the manual checks above are your real defense.
+            </p>
           </SectionCard>
 
           {/* Section 3: Security Checklist (General Best Practices) */}

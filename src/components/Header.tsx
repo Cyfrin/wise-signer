@@ -113,21 +113,24 @@ const Header = () => {
                   </span>
                 </Link>
                 <div className="border-t border-hairline" />
-                <div
+                <Link
                   role="menuitem"
-                  aria-disabled
-                  className="flex items-start gap-3 px-4 py-3 opacity-60"
+                  href="/tenderly/welcome"
+                  onClick={() => setOpen(false)}
+                  className="flex items-start gap-3 px-4 py-3 transition-colors hover:bg-raised"
                 >
-                  <span className="mt-0.5 text-muted">
+                  <span className="mt-0.5 text-brand">
                     <FaCode size={15} />
                   </span>
                   <span>
-                    <span className="block text-sm font-medium text-bone-dim">
+                    <span className="block text-sm font-medium text-bone">
                       Connected wallet
                     </span>
-                    <span className="block text-xs text-muted">Coming soon</span>
+                    <span className="block text-xs text-muted">
+                      Real wallet · Tenderly testnet
+                    </span>
                   </span>
-                </div>
+                </Link>
               </div>
             )}
           </div>
