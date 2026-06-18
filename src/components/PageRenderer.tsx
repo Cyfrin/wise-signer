@@ -10,6 +10,8 @@ import FeedbackComponent from "./FeedbackComponent";
 import ProgressComponent from "./ProgressComponent";
 import { FakeWebsiteType, TransactionDetails, SignatureDetails } from "@/types";
 import { Button } from "@/components/ui/Button";
+import { Erc8213Note } from "@/components/Erc8213Note";
+import { calldataDigest } from "@/lib/erc8213";
 import React, { forwardRef } from "react";
 
 interface QuestionResult {
@@ -78,6 +80,16 @@ const PageRenderer = forwardRef((props: PageRendererProps, ref) => {
     const transactionOrSignatureDetails = type === 'signOrReject' ? props.transactionOrSignatureDetails : undefined;
     const fakeWebsiteType = 'fakeWebsiteType' in props ? props.fakeWebsiteType : undefined;
     const questionId = 'questionId' in props ? props.questionId : undefined;
+
+    // ERC-8213 calldata digest, shown after answering transaction questions.
+    const txCalldata =
+        transactionOrSignatureDetails &&
+        "data" in transactionOrSignatureDetails &&
+        typeof transactionOrSignatureDetails.data === "string" &&
+        transactionOrSignatureDetails.data.startsWith("0x") &&
+        transactionOrSignatureDetails.data.length > 2
+            ? (transactionOrSignatureDetails.data as `0x${string}`)
+            : null;
 
     // Check localStorage and reset feedback when questionNumber changes
     useEffect(() => {
@@ -235,6 +247,12 @@ const PageRenderer = forwardRef((props: PageRendererProps, ref) => {
                             isCorrect={isCorrect}
                             feedbackContent={feedbackContent}
                         />
+                        {txCalldata && (
+                            <Erc8213Note
+                                label="Calldata Digest"
+                                digest={calldataDigest(txCalldata)}
+                            />
+                        )}
                     </div>
                 )}
 

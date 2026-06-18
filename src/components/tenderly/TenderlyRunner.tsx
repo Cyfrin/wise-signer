@@ -21,6 +21,7 @@ import {
 import { CUSTOM_CHAIN_ID } from "@/app/constants";
 import { useNetwork } from "@/components/NetworkContext";
 import { fundAddress, setErc20Balance } from "@/lib/tenderly";
+import { calldataDigest, eip712Digest } from "@/lib/erc8213";
 import { freshSeed } from "@/lib/random";
 import {
   buildRun,
@@ -33,6 +34,7 @@ import { Card } from "@/components/ui/Card";
 import { Button, buttonVariants } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import FeedbackComponent from "@/components/FeedbackComponent";
+import { Erc8213Note } from "@/components/Erc8213Note";
 import { cn } from "@/components/ui/cn";
 
 const SEED_KEY = "wiseTenderlySeed";
@@ -127,6 +129,14 @@ export default function TenderlyRunner() {
 
   const challenge = run[index];
   const correctCount = results.filter((r) => r.correct).length;
+
+  const erc8213 = !challenge
+    ? null
+    : challenge.request.kind === "tx"
+      ? challenge.request.data
+        ? { label: "Calldata Digest", digest: calldataDigest(challenge.request.data) }
+        : null
+      : { label: "EIP-712 Digest", digest: eip712Digest(challenge.request) };
 
   function record(decision: Decision) {
     if (!challenge) return;
@@ -361,6 +371,9 @@ export default function TenderlyRunner() {
                 isCorrect={revealed.correct}
                 feedbackContent={{ pages: [verdictLine(revealed, challenge) + challenge.why] }}
               />
+              {erc8213 && (
+                <Erc8213Note label={erc8213.label} digest={erc8213.digest} />
+              )}
               <div className="mt-4 flex justify-end">
                 <Button onClick={next}>
                   {index + 1 >= run.length ? "See results" : "Next"}{" "}
