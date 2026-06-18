@@ -99,3 +99,17 @@ export async function fundAddress(
 ): Promise<void> {
   await rpcCall(adminRpcUrl, "tenderly_setBalance", [[address], toWeiHex(eth)]);
 }
+
+/** Set an ERC-20 balance for an address on the vnet (Tenderly cheat method). */
+export async function setErc20Balance(
+  adminRpcUrl: string,
+  token: string,
+  address: string,
+  amount: bigint,
+): Promise<void> {
+  await rpcCall(adminRpcUrl, "tenderly_setErc20Balance", [
+    token,
+    address,
+    `0x${amount.toString(16)}`,
+  ]);
+}

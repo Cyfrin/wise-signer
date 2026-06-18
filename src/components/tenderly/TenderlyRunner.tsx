@@ -19,14 +19,16 @@ import {
   FaArrowRight,
   FaRedo,
   FaSpinner,
+  FaInfoCircle,
 } from "react-icons/fa";
 import { CUSTOM_CHAIN_ID } from "@/app/constants";
 import { useNetwork } from "@/components/NetworkContext";
-import { fundAddress } from "@/lib/tenderly";
+import { fundAddress, setErc20Balance } from "@/lib/tenderly";
 import { freshSeed } from "@/lib/random";
 import {
   buildRun,
   TOTAL_CHALLENGES,
+  SEED_TOKENS,
   type Challenge,
   type Decision,
 } from "@/data/tenderlyChallenges";
@@ -91,21 +93,29 @@ export default function TenderlyRunner() {
     setSeed(s);
   }, [isConnected, onRightChain, seed]);
 
-  // Fund the player with test ETH via the admin RPC.
+  // Fund the player with test ETH + ERC-20 balances via the admin RPC.
   useEffect(() => {
     if (seed === null || !address || prep !== "idle") return;
-    if (!networkInfo?.adminRpcUrl) {
-      // No admin RPC — assume the account already holds test funds.
-      setPrep("ready");
+    const adminRpc = networkInfo?.adminRpcUrl;
+    if (!adminRpc) {
+      setPrep("ready"); // no admin RPC — can't auto-fund (banner explains)
       return;
     }
     setPrep("funding");
-    fundAddress(networkInfo.adminRpcUrl, address)
-      .then(() => setPrep("ready"))
-      .catch((e) => {
+    (async () => {
+      try {
+        await fundAddress(adminRpc, address);
+        for (const t of SEED_TOKENS) {
+          await setErc20Balance(adminRpc, t.address, address, t.amount).catch(
+            () => {},
+          );
+        }
+      } catch (e) {
         setPrepError(humanizeError(e));
-        setPrep("ready"); // let them proceed; gas may already be present
-      });
+      } finally {
+        setPrep("ready");
+      }
+    })();
   }, [seed, address, networkInfo, prep]);
 
   const run = useMemo<Challenge[]>(
@@ -240,6 +250,14 @@ export default function TenderlyRunner() {
       <div className="mx-auto max-w-2xl">
         <ProgressDots index={index} results={results} />
 
+        {!networkInfo?.adminRpcUrl && (
+          <p className="mt-4 rounded-lg border border-caution/30 bg-caution/10 px-3 py-2 text-xs text-caution">
+            No admin RPC connected, so test tokens couldn&apos;t be funded —
+            transactions that need a balance may fail. Re-create your network
+            from the setup page to enable auto-funding.
+          </p>
+        )}
+
         <Card className="mt-6 overflow-hidden">
           <div className="flex items-center justify-between border-b border-hairline px-5 py-3">
             <Badge tone="brand">Level {challenge.level}</Badge>
@@ -253,6 +271,13 @@ export default function TenderlyRunner() {
             <p className="mt-2 text-sm leading-relaxed text-bone-dim">
               {challenge.intent}
             </p>
+
+            {challenge.note && (
+              <p className="mt-3 flex items-start gap-2 rounded-lg border border-hairline bg-raised px-3 py-2 text-xs leading-relaxed text-muted">
+                <FaInfoCircle className="mt-0.5 shrink-0 text-brand" size={12} />
+                {challenge.note}
+              </p>
+            )}
 
             <p className="field-label mt-6 mb-2">Your wallet will show</p>
             <div className="divide-y divide-hairline/70 rounded-xl border border-hairline">

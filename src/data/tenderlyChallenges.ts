@@ -51,12 +51,18 @@ export interface Challenge {
   request: WalletRequest;
   expected: Decision;
   why: string; // shown after the decision
+  note?: string; // standing context (token address, decimals, funding)
 }
 
-// Recognizable mainnet reference addresses, used as labels the player can learn.
-const USDC: Address = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
-const WETH: Address = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
+// Real Sepolia tokens — present on the forked vnet, so the wallet shows real
+// metadata and we can fund balances with tenderly_setErc20Balance.
+const USDC: Address = "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238"; // Circle USDC, 6 decimals
+const WETH: Address = "0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14"; // WETH9, 18 decimals
+// Mainnet Uniswap V2 router — a recognizable "official" reference label.
 const UNISWAP_V2_ROUTER: Address = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D";
+
+const USDC_NOTE = `On this testnet, USDC is the real contract at ${USDC} with 6 decimals — the same as mainnet USDC. Your wallet has been funded with test USDC to spend.`;
+const WETH_NOTE = `On this testnet, WETH is the real contract at ${WETH} with 18 decimals. Your wallet has been funded with test WETH.`;
 
 const CONTACTS = ["Dani", "Mae", "Theo", "Priya", "Kofi", "Lena"] as const;
 
@@ -105,6 +111,7 @@ function tokenTransfer(rng: Rng, player: Address): Challenge {
   return {
     level: 2,
     title: "Send a token to a contact",
+    note: USDC_NOTE,
     origin: "your wallet",
     intent: `Send ${amount} USDC to ${name} at ${contact}.`,
     fields: [
@@ -135,6 +142,7 @@ function tokenApproval(rng: Rng, player: Address): Challenge {
   return {
     level: 3,
     title: "Approve a token spend",
+    note: USDC_NOTE,
     origin: "app.aave.com",
     intent: `Deposit ${deposit} USDC into Aave. Its pool contract is ${pool}, so it needs approval for ${deposit} USDC.`,
     fields: [
@@ -190,6 +198,7 @@ function uniswapSwap(rng: Rng, player: Address): Challenge {
   return {
     level: 5,
     title: "Swap on a DEX",
+    note: WETH_NOTE,
     origin: "app.uniswap.org",
     intent: `Swap ${amountIn} WETH for USDC on Uniswap. The official Uniswap V2 router is ${UNISWAP_V2_ROUTER}.`,
     fields: [
@@ -224,6 +233,7 @@ function permitSignature(rng: Rng, player: Address): Challenge {
   return {
     level: 6,
     title: "Sign a gasless permit",
+    note: USDC_NOTE,
     origin: "app.aave.com",
     intent: `Approve ${deposit} USDC to Aave's pool (${pool}) with a gasless Permit signature — no gas, but it authorizes spending just like an on-chain approval.`,
     fields: [
@@ -265,6 +275,7 @@ function maliciousCalldata(rng: Rng, player: Address): Challenge {
   return {
     level: 7,
     title: "Read the calldata",
+    note: USDC_NOTE,
     origin: "claim-rewards.xyz",
     intent: `The site says: "Claim your ${reward} TOKEN airdrop." A claim should just call claim() on the airdrop contract (${airdrop}).`,
     fields: [
@@ -303,3 +314,14 @@ export function buildRun(seed: number, player: Address): Challenge[] {
 }
 
 export const TOTAL_CHALLENGES = GENERATORS.length;
+
+/** Tokens funded on the player's wallet before a run, via tenderly_setErc20Balance. */
+export const SEED_TOKENS: {
+  address: Address;
+  symbol: string;
+  decimals: number;
+  amount: bigint;
+}[] = [
+  { address: USDC, symbol: "USDC", decimals: 6, amount: 10_000n * 10n ** 6n },
+  { address: WETH, symbol: "WETH", decimals: 18, amount: 50n * 10n ** 18n },
+];
