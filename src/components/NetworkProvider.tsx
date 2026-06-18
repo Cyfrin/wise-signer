@@ -21,6 +21,37 @@ const NETWORK_INFO_KEY = "tenderlyNetworkInfo";
 const WALLETCONNECT_PROJECT_ID =
     process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "b1625424c9a1da95a8e9b3b522996450";
 
+// Build the wagmi config once per unique network. Caching prevents
+// getDefaultConfig (and WalletConnect Core) from initializing twice under React
+// StrictMode's dev double-mount, which caused repeated connect popups.
+let cachedWagmiConfig: { key: string; config: Config } | null = null;
+function buildWagmiConfig(info: NetworkInfo): Config {
+    const chainId = parseInt(info.chainId, 16) || CUSTOM_CHAIN_ID;
+    const key = `${info.rpcUrl}|${chainId}`;
+    if (cachedWagmiConfig?.key === key) return cachedWagmiConfig.config;
+
+    const customChain = {
+        id: chainId,
+        name: info.name || VIRTUAL_NET_DISPLAY_NAME,
+        iconUrl: '/wise-signer.png',
+        iconBackground: '#fff',
+        nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+        rpcUrls: {
+            default: { http: [info.rpcUrl] },
+            public: { http: [info.rpcUrl] },
+        },
+    } as const satisfies Chain;
+
+    const config = getDefaultConfig({
+        appName: 'Wise Signer',
+        projectId: WALLETCONNECT_PROJECT_ID,
+        chains: [customChain],
+        ssr: false,
+    });
+    cachedWagmiConfig = { key, config };
+    return config;
+}
+
 // Dynamically import the Wagmi-related components with no SSR
 const WagmiProviders = dynamic<{
     wagmiConfig: Config;
@@ -103,35 +134,7 @@ export const NetworkProvider: React.FC<NetworkProviderProps> = ({
 
         if (info) {
             try {
-                // Configure the wagmi client with the custom chain
-                const customChain = {
-                    id: parseInt(info.chainId, 16) || CUSTOM_CHAIN_ID,
-                    name: info.name || VIRTUAL_NET_DISPLAY_NAME,
-                    iconUrl: '/wise-signer.png',
-                    iconBackground: '#fff',
-                    nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-                    rpcUrls: {
-                        default: {
-                            http: [info.rpcUrl],
-                        },
-                        public: {
-                            http: [info.rpcUrl],
-                        }
-                    }
-                } as const satisfies Chain;
-
-                const config = getDefaultConfig({
-                    appName: 'Wise Signer',
-                    projectId: WALLETCONNECT_PROJECT_ID,
-                    chains: [customChain],
-                    ssr: false,
-                });
-
-                if (config) {
-                    setWagmiConfig(config);
-                } else {
-                    console.error("Failed to create wagmi config");
-                }
+                setWagmiConfig(buildWagmiConfig(info));
             } catch (error) {
                 console.error("Error creating wagmi config:", error);
             }

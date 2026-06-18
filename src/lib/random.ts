@@ -44,13 +44,14 @@ export function randomHexAddress(rng: Rng): `0x${string}` {
  * fools anyone who only checks the truncated 0x1234…abcd form.
  */
 export function lookAlike(rng: Rng, addr: string, keep = 4): `0x${string}` {
-  const clean = addr.replace(/^0x/, "").padEnd(40, "0").slice(0, 40);
+  // Lowercase: copying head/tail from a checksummed address would yield a
+  // mixed-case string that fails EIP-55 validation (viem rejects it).
+  const clean = addr.replace(/^0x/, "").toLowerCase().padEnd(40, "0").slice(0, 40);
   const head = clean.slice(0, keep);
   const tail = clean.slice(-keep);
   const hex = "0123456789abcdef";
   let mid = "";
   for (let i = 0; i < 40 - keep * 2; i++) {
-    // force at least visible difference by avoiding copying the original middle
     mid += hex[Math.floor(rng() * 16)];
   }
   return `0x${head}${mid}${tail}` as `0x${string}`;
