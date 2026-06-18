@@ -1,130 +1,140 @@
-import { useState, useEffect } from "react";
-import Image from "next/image";
-import { useNetwork } from "@/components/NetworkContext";
-import { usePathname } from 'next/navigation';
-import dynamic from 'next/dynamic';
-import Link from 'next/link';
+"use client";
 
-// Dynamically import ConnectButton with no SSR to avoid errors
+import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import dynamic from "next/dynamic";
+import { FaChevronDown, FaShieldAlt, FaCode } from "react-icons/fa";
+import { useNetwork } from "@/components/NetworkContext";
+import { buttonVariants } from "@/components/ui/Button";
+import { cn } from "@/components/ui/cn";
+
 const ConnectButton = dynamic(
-    () => import('@rainbow-me/rainbowkit').then((mod) => mod.ConnectButton),
-    { ssr: false }
+  () => import("@rainbow-me/rainbowkit").then((mod) => mod.ConnectButton),
+  { ssr: false },
 );
 
+const navLink =
+  "rounded-md px-3 py-2 text-sm text-bone-dim transition-colors hover:text-bone";
+
 const Header = () => {
-    const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
-    const { networkInfo, isLoading } = useNetwork();
-    const [mounted, setMounted] = useState<boolean>(false);
+  const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
-    const pathname = usePathname();
-    const isTenderlyQuestionsPage = pathname?.startsWith('/tenderly/questions') || false;
+  const pathname = usePathname();
+  const { networkInfo } = useNetwork();
+  const isTenderlyQuestionsPage =
+    pathname?.startsWith("/tenderly/questions") ?? false;
 
-    useEffect(() => {
-        setMounted(true);
-    }, []);
+  useEffect(() => setMounted(true), []);
 
-    // This will always be false for now
-    const showConnectButton = mounted && !isLoading && !!networkInfo && isTenderlyQuestionsPage && false; // Add false to disable it
-
-    const handlePlayNowClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-        if (!(e.clientX > e.currentTarget.getBoundingClientRect().right - 30)) {
-            window.location.href = "/simulated/questions/1";
-        }
+  useEffect(() => {
+    if (!open) return;
+    const onPointer = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node))
+        setOpen(false);
     };
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("mousedown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
 
-    // Prevent rendering differences between server and client
-    if (!mounted) {
-        return (
-            <nav className="px-8 py-2 border-b border-zinc-800 flex flex-row justify-between items-center text-white bg-zinc-900">
-                <div className="flex items-center gap-3">
-                    <div style={{ width: '50px', height: '50px' }} /> {/* Placeholder for Image */}
-                    <span className="text-xl font-semibold">Wise Signer</span>
-                </div>
-                <div className="flex items-center gap-4">
-                    <div className="px-4 py-2 bg-zinc-900 text-white rounded-md">Play Now</div>
-                </div>
-            </nav>
-        );
-    }
+  const showConnectButton = mounted && isTenderlyQuestionsPage && !!networkInfo;
 
-    return (
-        <nav className="px-8 py-2 border-b border-zinc-800 flex flex-row justify-between items-center text-white bg-zinc-900">
-            <div className="flex items-center gap-3">
-                <Image
-                    src="/cyfrin.svg"
-                    alt="Cyfrin Logo"
-                    width={50}
-                    height={50}
-                />
-                <Link
-                    href="/"
-                    className="text-xl font-semibold text-white hover:text-gray-300 transition"
-                >
-                    Wise Signer
-                </Link>
+  return (
+    <header className="sticky top-0 z-40 border-b border-hairline bg-ink/80 backdrop-blur-md">
+      <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
+        <Link href="/" className="flex items-center gap-2.5">
+          <Image src="/cyfrin.svg" alt="" width={28} height={32} priority />
+          <span className="font-display text-lg font-semibold tracking-tight text-bone">
+            Wise Signer
+          </span>
+        </Link>
+
+        <div className="flex items-center gap-1">
+          <Link href="/verify-interactions" className={cn(navLink, "hidden sm:block")}>
+            Guide
+          </Link>
+          <Link href="/tools" className={navLink}>
+            Tools
+          </Link>
+
+          {showConnectButton && (
+            <div className="ml-1">
+              <ConnectButton
+                showBalance={false}
+                chainStatus="icon"
+                accountStatus={{ smallScreen: "avatar", largeScreen: "full" }}
+              />
             </div>
+          )}
 
-            <div className="flex items-center gap-4">
-                {/* Tools Link */}
+          <div ref={menuRef} className="relative ml-1.5">
+            <button
+              onClick={() => setOpen((o) => !o)}
+              aria-haspopup="menu"
+              aria-expanded={open}
+              className={cn(buttonVariants({ variant: "primary", size: "sm" }), "gap-1.5")}
+            >
+              Play
+              <FaChevronDown
+                size={10}
+                className={cn("transition-transform", open && "rotate-180")}
+              />
+            </button>
+
+            {open && (
+              <div
+                role="menu"
+                className="absolute right-0 mt-2 w-64 overflow-hidden rounded-xl border border-hairline bg-surface shadow-2xl shadow-black/50"
+              >
                 <Link
-                    href="/tools"
-                    className="text-white hover:text-gray-300 transition"
+                  role="menuitem"
+                  href="/simulated/questions/1"
+                  onClick={() => setOpen(false)}
+                  className="flex items-start gap-3 px-4 py-3 transition-colors hover:bg-raised"
                 >
-                    Tools
+                  <span className="mt-0.5 text-sign">
+                    <FaShieldAlt size={15} />
+                  </span>
+                  <span>
+                    <span className="block text-sm font-medium text-bone">
+                      Simulated wallet
+                    </span>
+                    <span className="block text-xs text-muted">
+                      15 scenarios · no wallet needed
+                    </span>
+                  </span>
                 </Link>
-
-                {/* Only render ConnectButton wrapper when needed */}
-                {showConnectButton && (
-                    <div className="flex flex-row items-center">
-                        <div className="mr-2">
-                            <ConnectButton
-                                showBalance={false}
-                                accountStatus={{
-                                    smallScreen: 'avatar',
-                                    largeScreen: 'full',
-                                }}
-                                chainStatus={{
-                                    smallScreen: 'icon',
-                                    largeScreen: 'full',
-                                }}
-                            />
-                        </div>
-                    </div>
-                )}
-
-                <div className="relative">
-                    <button
-                        onClick={() => setDropdownOpen(!dropdownOpen)}
-                        onMouseUp={handlePlayNowClick}
-                        className="cursor-pointer flex items-center gap-1 px-4 py-2 bg-zinc-900 text-white rounded-md hover:bg-zinc-800 transition"
-                    >
-                        Play Now
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-1">
-                            <path d="m6 9 6 6 6-6" />
-                        </svg>
-                    </button>
-
-                    {dropdownOpen && (
-                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
-                            <Link
-                                href="/simulated/questions/1"
-                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-t-md"
-                            >
-                                Simulated Wallet
-                            </Link>
-                            <div
-                                className="block px-4 py-2 text-sm text-gray-400 cursor-not-allowed flex items-center"
-                                onClick={(e) => e.preventDefault()}
-                            >
-                                Tenderly Virtualnet
-                                <span className="ml-2 text-xs bg-gray-200 text-gray-600 px-1 rounded">Under Construction</span>
-                            </div>
-                        </div>
-                    )}
+                <div className="border-t border-hairline" />
+                <div
+                  role="menuitem"
+                  aria-disabled
+                  className="flex items-start gap-3 px-4 py-3 opacity-60"
+                >
+                  <span className="mt-0.5 text-muted">
+                    <FaCode size={15} />
+                  </span>
+                  <span>
+                    <span className="block text-sm font-medium text-bone-dim">
+                      Connected wallet
+                    </span>
+                    <span className="block text-xs text-muted">Coming soon</span>
+                  </span>
                 </div>
-            </div>
-        </nav>
-    );
+              </div>
+            )}
+          </div>
+        </div>
+      </nav>
+    </header>
+  );
 };
 
 export default Header;

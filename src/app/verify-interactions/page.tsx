@@ -22,31 +22,23 @@ interface SectionCardProps {
   title: string;
   icon: ElementType;
   children: ReactNode;
-  titleColor?: string;
 }
 
 // Helper component for consistent section styling
-const SectionCard = ({
-  id,
-  title,
-  icon: Icon,
-  children,
-  titleColor = "text-green-400",
-}: SectionCardProps) => (
+const SectionCard = ({ id, title, icon: Icon, children }: SectionCardProps) => (
   <section
     id={id}
-    className="bg-zinc-900/60 backdrop-blur-md border border-zinc-700/50 p-6 sm:p-8 rounded-xl shadow-2xl"
+    className="scroll-mt-24 rounded-2xl border border-hairline bg-surface p-6 sm:p-8"
   >
-    <div className="flex items-center gap-3 sm:gap-4 mb-6">
-      <Icon size={32} className={titleColor} />
-      <h2
-        className={`text-2xl sm:text-3xl font-bold ${titleColor === "text-green-400" ? "text-zinc-100" : titleColor
-          }`}
-      >
+    <div className="mb-6 flex items-center gap-4">
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-hairline-strong bg-raised text-brand">
+        <Icon size={20} />
+      </span>
+      <h2 className="font-display text-2xl font-semibold tracking-tight text-bone sm:text-3xl">
         {title}
       </h2>
     </div>
-    <div className="space-y-6 text-zinc-300 leading-relaxed text-sm sm:text-base">
+    <div className="space-y-6 text-sm leading-relaxed text-bone-dim sm:text-base">
       {children}
     </div>
   </section>
@@ -61,11 +53,11 @@ interface SubSectionProps {
 // Helper component for sub-sections
 const SubSection = ({ title, children, icon: Icon }: SubSectionProps) => (
   <div>
-    <h3 className="text-lg sm:text-xl font-semibold mb-3 text-green-300 flex items-center gap-2">
-      {Icon && <Icon size={20} className="text-green-300" />}
+    <h3 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-bone sm:text-xl">
+      {Icon && <Icon size={18} className="text-brand" />}
       {title}
     </h3>
-    <div className="space-y-3 pl-4 border-l-2 border-zinc-700 text-zinc-400">
+    <div className="space-y-3 border-l-2 border-hairline pl-4 text-bone-dim">
       {children}
     </div>
   </div>
@@ -78,10 +70,10 @@ interface DetailListItemProps {
 
 // Helper for general list items
 const DetailListItem = ({ children, strongPrefix }: DetailListItemProps) => (
-  <li className="flex items-start gap-2">
-    <FaInfoCircle size={18} className="text-sky-400 mt-1 shrink-0 opacity-70" />
+  <li className="flex items-start gap-2.5">
+    <FaInfoCircle size={16} className="mt-1 shrink-0 text-brand/70" />
     <span>
-      {strongPrefix && <strong className="text-sky-300">{strongPrefix}</strong>}
+      {strongPrefix && <strong className="text-bone">{strongPrefix}</strong>}
       {children}
     </span>
   </li>
@@ -93,8 +85,8 @@ interface CheckListItemProps {
 
 // Helper for checklist items
 const CheckListItem = ({ children }: CheckListItemProps) => (
-  <li className="flex items-start gap-2">
-    <FaCheckCircle size={18} className="text-green-500 mt-1 shrink-0" />
+  <li className="flex items-start gap-2.5">
+    <FaCheckCircle size={16} className="mt-1 shrink-0 text-sign" />
     <span>{children}</span>
   </li>
 );
@@ -105,61 +97,51 @@ interface RedFlagListItemProps {
 
 // Helper for red flag list items
 const RedFlagListItem = ({ children }: RedFlagListItemProps) => (
-  <li className="flex items-start gap-2">
-    <FaExclamationTriangle size={18} className="text-red-500 mt-1 shrink-0" />
+  <li className="flex items-start gap-2.5">
+    <FaExclamationTriangle size={16} className="mt-1 shrink-0 text-reject" />
     <span>{children}</span>
   </li>
 );
 
 const VerifyInteractionsPage = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white relative overflow-hidden">
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCI+CiAgPHBhdGggZD0iTTAgMGg2MHY2MEgweiIgZmlsbD0ibm9uZSIgLz4KICA8cGF0aCBkPSJNMzAgMzBtLTI4IDBhMjggMjggMCAxIDAgNTYgMCAyOCAyOCAwIDEgMC01NiAwIiBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iMC4yIiBmaWxsPSJub25lIiAvPgo8L3N2Zz4=')] opacity-5"></div>
-
-      <div className="relative px-4 sm:px-6 py-16">
-        <div className="max-w-5xl mx-auto space-y-16 sm:space-y-20">
-          <header className="text-center space-y-6">
-            <div className="flex justify-center mb-6">
-              <div className="relative">
-                <FaShieldAlt size={72} className="text-green-400" />
-                <div className="absolute inset-0 text-green-400 blur-xl opacity-50">
-                  <FaShieldAlt size={72} />
-                </div>
-              </div>
+    <div className="min-h-screen bg-ink">
+      <div className="px-6 py-16">
+        <div className="mx-auto max-w-4xl space-y-16">
+          <header className="text-center">
+            <div className="flex justify-center">
+              <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-hairline-strong bg-raised text-brand">
+                <FaShieldAlt size={26} />
+              </span>
             </div>
-            <h1 className="text-4xl sm:text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-500">
-              Verify All Wallet Interactions
+            <p className="field-label mt-6">The discipline</p>
+            <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight text-bone sm:text-5xl">
+              Verify every wallet interaction
             </h1>
-            <p className="text-base sm:text-lg text-zinc-400 max-w-3xl mx-auto leading-relaxed">
-              Understanding and meticulously verifying every transaction and
-              signature request is paramount in the Web3 world. This guide will
-              help you navigate these interactions safely, protecting your
-              assets from scams, phishing attempts, and malicious decentralized
-              applications (dApps). Before signing anything, pause—inspect the
-              interaction. This guide covers everything from routine
-              transactions to EIP-7702 delegation.
+            <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-bone-dim">
+              Before you sign anything, pause and inspect it. This guide covers
+              reading transactions and signatures — from routine transfers to
+              EIP-7702 delegation — so you can protect your assets from phishing
+              and malicious dApps.
             </p>
-            <div className="mt-8 sm:mt-10 flex flex-wrap justify-center gap-3 sm:gap-4">
+            <div className="mt-8 flex flex-wrap justify-center gap-3">
               <a
                 href="#transactions"
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-zinc-800/50 border border-zinc-700 hover:bg-zinc-700/50 transition-all text-sm sm:text-base"
+                className="inline-flex items-center gap-2 rounded-lg border border-hairline bg-surface px-4 py-2 text-sm text-bone-dim transition-colors hover:border-hairline-strong hover:text-bone"
               >
-                <FaExchangeAlt size={16} />
-                <span>Transactions</span>
+                <FaExchangeAlt size={14} /> Transactions
               </a>
               <a
                 href="#signatures"
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-zinc-800/50 border border-zinc-700 hover:bg-zinc-700/50 transition-all text-sm sm:text-base"
+                className="inline-flex items-center gap-2 rounded-lg border border-hairline bg-surface px-4 py-2 text-sm text-bone-dim transition-colors hover:border-hairline-strong hover:text-bone"
               >
-                <FaFileSignature size={16} />
-                <span>Signatures</span>
+                <FaFileSignature size={14} /> Signatures
               </a>
               <a
                 href="#checklist"
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-zinc-800/50 border border-zinc-700 hover:bg-zinc-700/50 transition-all text-sm sm:text-base"
+                className="inline-flex items-center gap-2 rounded-lg border border-hairline bg-surface px-4 py-2 text-sm text-bone-dim transition-colors hover:border-hairline-strong hover:text-bone"
               >
-                <FaListAlt size={16} />
-                <span>Security Checklist</span>
+                <FaListAlt size={14} /> Checklist
               </a>
             </div>
           </header>
@@ -194,13 +176,13 @@ const VerifyInteractionsPage = () => {
                 </DetailListItem>
                 <DetailListItem strongPrefix="Data / Calldata: ">
                   Encoded instructions for the smart contract.
-                  <ul className="list-disc list-inside space-y-1 pl-6 mt-2 text-zinc-400">
+                  <ul className="list-disc list-inside space-y-1 pl-6 mt-2 text-bone-dim">
                     <li>
                       Use calldata decoders to understand the parameters. (See
                       our{" "}
                       <Link
                         href="/tools"
-                        className="text-sky-400 hover:text-sky-300 underline"
+                        className="text-brand hover:text-brand-strong underline"
                       >
                         Tools page
                       </Link>{" "}
@@ -220,7 +202,7 @@ const VerifyInteractionsPage = () => {
               title="EIP-7702 Transactions (Set Code)"
               icon={FaFileCode}
             >
-              <p className="mb-3 text-zinc-300">
+              <p className="mb-3 text-bone-dim">
                 EIP-7702 allows an Externally Owned Account (EOA) to temporarily
                 act like a smart contract for a single transaction by setting
                 its `code`. This is a powerful feature that requires careful
@@ -230,7 +212,7 @@ const VerifyInteractionsPage = () => {
                 <DetailListItem strongPrefix="The `code` being set: ">
                   This is the MOST CRITICAL part. What smart contract logic will
                   your EOA execute?
-                  <ul className="list-disc list-inside space-y-1 pl-6 mt-2 text-zinc-400">
+                  <ul className="list-disc list-inside space-y-1 pl-6 mt-2 text-bone-dim">
                     <li>
                       This code should ideally be from a trusted, audited
                       source.
@@ -260,8 +242,8 @@ const VerifyInteractionsPage = () => {
                   assets. Malicious `code` could drain your wallet.
                 </DetailListItem>
               </ul>
-              <p className="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-md text-sm text-yellow-300">
-                <FaInfoCircle size={16} className="inline mr-2 mb-0.5" />
+              <p className="mt-4 rounded-lg border border-caution/30 bg-caution/10 p-3 text-sm text-caution">
+                <FaInfoCircle size={15} className="mr-2 mb-0.5 inline" />
                 Think of it as temporarily lending your account's "keys" to a
                 piece of code for one specific job. Make absolutely sure that
                 code is trustworthy and will only do that job.
@@ -274,17 +256,17 @@ const VerifyInteractionsPage = () => {
             >
               <ul className="space-y-3">
                 <li>
-                  <strong className="text-sky-300">
+                  <strong className="text-bone">
                     Token Approvals (`approve`, `setApprovalForAll`):
                   </strong>
-                  <ul className="list-disc list-inside space-y-1 pl-6 mt-2 text-zinc-400">
+                  <ul className="list-disc list-inside space-y-1 pl-6 mt-2 text-bone-dim">
                     <li>
-                      <strong className="text-sky-300">Spender:</strong>{" "}
+                      <strong className="text-bone">Spender:</strong>{" "}
                       CRITICAL! Who are you giving permission to spend your
                       tokens? Ensure it's a trusted dApp/protocol.
                     </li>
                     <li>
-                      <strong className="text-sky-300">
+                      <strong className="text-bone">
                         Amount (for `approve`):
                       </strong>{" "}
                       Be wary of unlimited approvals (`MAX_UINT256`). Consider
@@ -292,7 +274,7 @@ const VerifyInteractionsPage = () => {
                       approvals.
                     </li>
                     <li>
-                      <strong className="text-sky-300">
+                      <strong className="text-bone">
                         `setApprovalForAll` (NFTs):
                       </strong>{" "}
                       Grants full control over ALL NFTs in a collection to the
@@ -301,16 +283,16 @@ const VerifyInteractionsPage = () => {
                   </ul>
                 </li>
                 <li>
-                  <strong className="text-sky-300">
+                  <strong className="text-bone">
                     Swaps (e.g., Uniswap):
                   </strong>
-                  <ul className="list-disc list-inside space-y-1 pl-6 mt-2 text-zinc-400">
+                  <ul className="list-disc list-inside space-y-1 pl-6 mt-2 text-bone-dim">
                     <li>
-                      <strong className="text-sky-300">Router Contract:</strong>{" "}
+                      <strong className="text-bone">Router Contract:</strong>{" "}
                       Is it the official DEX router?
                     </li>
                     <li>
-                      <strong className="text-sky-300">
+                      <strong className="text-bone">
                         Tokens & Amounts:
                       </strong>{" "}
                       Are the input/output tokens and expected amounts (or
@@ -319,16 +301,16 @@ const VerifyInteractionsPage = () => {
                   </ul>
                 </li>
                 <li>
-                  <strong className="text-sky-300">NFT Mints:</strong>
-                  <ul className="list-disc list-inside space-y-1 pl-6 mt-2 text-zinc-400">
+                  <strong className="text-bone">NFT Mints:</strong>
+                  <ul className="list-disc list-inside space-y-1 pl-6 mt-2 text-bone-dim">
                     <li>
-                      <strong className="text-sky-300">
+                      <strong className="text-bone">
                         Contract Address:
                       </strong>{" "}
                       Is it the official NFT project contract?
                     </li>
                     <li>
-                      <strong className="text-sky-300">Price:</strong> Does the
+                      <strong className="text-bone">Price:</strong> Does the
                       `value` field match the mint price?
                     </li>
                   </ul>
@@ -374,7 +356,7 @@ const VerifyInteractionsPage = () => {
               Signatures are off-chain confirmations. They don't immediately
               cause a blockchain transaction but can authorize actions, prove
               ownership, or log you into dApps.
-              <strong className="text-red-400">
+              <strong className="text-reject">
                 NEVER sign a message you don't fully understand or from an
                 untrusted source.
               </strong>
@@ -386,15 +368,15 @@ const VerifyInteractionsPage = () => {
             >
               <ul className="space-y-3">
                 <li>
-                  <strong className="text-sky-300">`personal_sign`:</strong>
-                  <ul className="list-disc list-inside space-y-1 pl-6 mt-2 text-zinc-400">
+                  <strong className="text-bone">`personal_sign`:</strong>
+                  <ul className="list-disc list-inside space-y-1 pl-6 mt-2 text-bone-dim">
                     <li>
-                      <strong className="text-sky-300">Message Content:</strong>{" "}
+                      <strong className="text-bone">Message Content:</strong>{" "}
                       Usually human-readable (e.g., "Sign in to ExampleApp").
                       Read it carefully.
                     </li>
                     <li>
-                      <strong className="text-sky-300">Caution:</strong> Be
+                      <strong className="text-bone">Caution:</strong> Be
                       extremely wary if the message is a long hexadecimal
                       string. It could be a trick to sign a transaction hash or
                       other sensitive data.
@@ -402,20 +384,20 @@ const VerifyInteractionsPage = () => {
                   </ul>
                 </li>
                 <li>
-                  <strong className="text-sky-300">
+                  <strong className="text-bone">
                     `eth_signTypedData` (EIP-712):
                   </strong>
-                  <ul className="list-disc list-inside space-y-1 pl-6 mt-2 text-zinc-400">
+                  <ul className="list-disc list-inside space-y-1 pl-6 mt-2 text-bone-dim">
                     <li>
-                      <strong className="text-sky-300">Structured Data:</strong>{" "}
+                      <strong className="text-bone">Structured Data:</strong>{" "}
                       Presents data in a more readable, itemized format.
                     </li>
                     <li>
-                      <strong className="text-sky-300">Wallet Display:</strong>{" "}
+                      <strong className="text-bone">Wallet Display:</strong>{" "}
                       Your wallet should clearly show:
                       <ul className="list-disc list-inside space-y-1 pl-8 mt-1">
                         <li>
-                          <strong className="text-sky-300">
+                          <strong className="text-bone">
                             Domain Separator:
                           </strong>{" "}
                           Info about the dApp (name, version, chain ID,
@@ -423,13 +405,13 @@ const VerifyInteractionsPage = () => {
                           you're using.
                         </li>
                         <li>
-                          <strong className="text-sky-300">
+                          <strong className="text-bone">
                             Message Data:
                           </strong>{" "}
                           The actual values being signed. Read every field.
                         </li>
                         <li>
-                          <strong className="text-sky-300">
+                          <strong className="text-bone">
                             EIP-712 Raw Data:
                           </strong>{" "}
                           The combination of the domain and message hash, this is exactly what is being signed.
@@ -437,12 +419,12 @@ const VerifyInteractionsPage = () => {
                       </ul>
                     </li>
                     <li>
-                      <strong className="text-sky-300">Common Uses:</strong>{" "}
+                      <strong className="text-bone">Common Uses:</strong>{" "}
                       Gasless token approvals (`Permit` for ERC20), off-chain
                       orders, voting.
                     </li>
                     <li>
-                      <strong className="text-sky-300">
+                      <strong className="text-bone">
                         Example - ERC20 `Permit`:
                       </strong>{" "}
                       Verify `owner` (your address), `spender` (who gets
@@ -503,27 +485,27 @@ const VerifyInteractionsPage = () => {
           >
             <ul className="space-y-3">
               <CheckListItem>
-                <strong className="text-sky-300">
+                <strong className="text-bone">
                   Slow Down & Be Skeptical:
                 </strong>{" "}
                 Don't rush. Scammers often create a false sense of urgency. If
                 something feels off, it probably is.
               </CheckListItem>
               <CheckListItem>
-                <strong className="text-sky-300">Use a Hardware Wallet:</strong>{" "}
+                <strong className="text-bone">Use a Hardware Wallet:</strong>{" "}
                 For significant assets, a hardware wallet adds a critical layer
                 of security by keeping private keys offline. Always verify
                 transaction details on the hardware wallet's trusted display.
               </CheckListItem>
               <CheckListItem>
-                <strong className="text-sky-300">
+                <strong className="text-bone">
                   Trusted Wallet Software & dApps:
                 </strong>{" "}
                 Use well-known, reputable wallet software and dApps. Keep them
                 updated.
               </CheckListItem>
               <CheckListItem>
-                <strong className="text-sky-300">
+                <strong className="text-bone">
                   Transaction Simulators:
                 </strong>{" "}
                 Tools like WalletGuard, PocketUniverse, Fire, or Tenderly Forks
@@ -531,34 +513,34 @@ const VerifyInteractionsPage = () => {
                 you sign. Many wallets are integrating these features.
               </CheckListItem>
               <CheckListItem>
-                <strong className="text-sky-300">
+                <strong className="text-bone">
                   Verify Contract Addresses & dApp URLs:
                 </strong>{" "}
                 Always double-check you're interacting with the correct contract
                 or official website. Bookmark trusted sites.
               </CheckListItem>
               <CheckListItem>
-                <strong className="text-sky-300">
+                <strong className="text-bone">
                   Understand What You're Approving/Signing:
                 </strong>{" "}
                 If you don't understand it, don't approve it. Ask for
                 clarification from trusted community sources if needed.
               </CheckListItem>
               <CheckListItem>
-                <strong className="text-sky-300">
+                <strong className="text-bone">
                   Manage Token Approvals:
                 </strong>{" "}
                 Regularly review and revoke unnecessary token approvals using
                 tools like Revoke.cash or Etherscan's token approval checker.
               </CheckListItem>
               <CheckListItem>
-                <strong className="text-sky-300">Beware of Phishing:</strong>{" "}
+                <strong className="text-bone">Beware of Phishing:</strong>{" "}
                 Scammers create fake websites, send DMs, or emails impersonating
                 projects or support. Never share your seed phrase or private
                 keys.
               </CheckListItem>
               <CheckListItem>
-                <strong className="text-sky-300">
+                <strong className="text-bone">
                   Educate Yourself Continuously:
                 </strong>{" "}
                 The Web3 space evolves rapidly. Stay informed about new types of
@@ -570,11 +552,10 @@ const VerifyInteractionsPage = () => {
           {/* Key Takeaway Section */}
           <SectionCard
             id="key-takeaway"
-            title="Key Takeaway: Your Vigilance is Key"
+            title="Your vigilance is the last line of defense"
             icon={FaLock}
-            titleColor="text-sky-400"
           >
-            <p className="text-lg text-zinc-200">
+            <p className="text-lg text-bone">
               Diligent verification is your best defense in the Web3 world.
               Every click, every signature, every transaction confirmation
               matters. By understanding the mechanics and potential risks, you
@@ -586,7 +567,7 @@ const VerifyInteractionsPage = () => {
               decoders, please visit our{" "}
               <Link
                 href="/tools"
-                className="text-sky-400 hover:text-sky-300 underline font-semibold inline-flex items-center gap-1"
+                className="text-brand hover:text-brand-strong underline font-semibold inline-flex items-center gap-1"
               >
                 Tools & Resources page <FaExternalLinkAlt size={16} />
               </Link>

@@ -11,9 +11,15 @@ import dynamic from 'next/dynamic';
 import { NetworkInfo, NetworkContextProvider } from '@/components/NetworkContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { buttonVariants } from '@/components/ui/Button';
 
 // Local storage key
 const NETWORK_INFO_KEY = "tenderlyNetworkInfo";
+
+// WalletConnect project id is a public client identifier (shipped in every dApp
+// bundle). Override per-deployment via NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID.
+const WALLETCONNECT_PROJECT_ID =
+    process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "b1625424c9a1da95a8e9b3b522996450";
 
 // Dynamically import the Wagmi-related components with no SSR
 const WagmiProviders = dynamic<{
@@ -105,7 +111,7 @@ export const NetworkProvider: React.FC<NetworkProviderProps> = ({
 
                 const config = getDefaultConfig({
                     appName: 'Wise Signer',
-                    projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID!,
+                    projectId: WALLETCONNECT_PROJECT_ID,
                     chains: [customChain],
                     ssr: false,
                 });
@@ -142,11 +148,7 @@ export const NetworkProvider: React.FC<NetworkProviderProps> = ({
         return (
             <NetworkContextProvider value={networkContextValue}>
                 <BasicLayout>
-                    <div className="flex items-center justify-center min-h-screen bg-zinc-900 text-white">
-                        <div className="text-center">
-                            <p className="text-zinc-400">Loading...</p>
-                        </div>
-                    </div>
+                    <div className="min-h-[60vh] bg-ink" />
                 </BasicLayout>
             </NetworkContextProvider>
         );
@@ -157,11 +159,7 @@ export const NetworkProvider: React.FC<NetworkProviderProps> = ({
         return (
             <NetworkContextProvider value={networkContextValue}>
                 <BasicLayout>
-                    <div className="flex items-center justify-center min-h-screen bg-zinc-900 text-white">
-                        <div className="text-center">
-                            <p className="text-zinc-400">Loading network config...</p>
-                        </div>
-                    </div>
+                    <div className="min-h-[60vh] bg-ink" />
                 </BasicLayout>
             </NetworkContextProvider>
         );
@@ -172,10 +170,8 @@ export const NetworkProvider: React.FC<NetworkProviderProps> = ({
         return (
             <NetworkContextProvider value={networkContextValue}>
                 <BasicLayout>
-                    <div className="flex items-center justify-center min-h-screen bg-zinc-900 text-white">
-                        <div className="text-center">
-                            <p className="text-zinc-400">Error: {error}</p>
-                        </div>
+                    <div className="flex min-h-[60vh] items-center justify-center bg-ink px-6">
+                        <p className="text-sm text-reject">Error: {error}</p>
                     </div>
                 </BasicLayout>
             </NetworkContextProvider>
@@ -198,18 +194,21 @@ export const NetworkProvider: React.FC<NetworkProviderProps> = ({
         return (
             <NetworkContextProvider value={networkContextValue}>
                 <BasicLayout>
-                    <div className="flex items-center justify-center min-h-screen bg-zinc-900 text-white p-8">
-                        <div className="bg-zinc-800 p-6 rounded-lg max-w-md text-center">
-                            <h2 className="text-xl font-semibold mb-4">Network Setup Required</h2>
-                            <p className="mb-6">
-                                To continue, you need to set up a Tenderly Virtual Network for safely practicing
-                                Ethereum transactions.
+                    <div className="flex min-h-[60vh] items-center justify-center bg-ink px-6 py-16">
+                        <div className="max-w-md rounded-xl border border-hairline bg-surface p-8 text-center">
+                            <h2 className="font-display text-xl font-semibold text-bone">
+                                Set up a test network
+                            </h2>
+                            <p className="mt-3 text-sm leading-relaxed text-bone-dim">
+                                Connected-wallet mode runs on a disposable Tenderly virtual
+                                network, so you can sign real transactions without risking
+                                real funds.
                             </p>
                             <a
                                 href="/tenderly/welcome"
-                                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition inline-block"
+                                className={`${buttonVariants({ variant: "primary" })} mt-6`}
                             >
-                                Set Up Network
+                                Set up network
                             </a>
                         </div>
                     </div>

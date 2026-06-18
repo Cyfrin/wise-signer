@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { questions } from '@/data/questions';
+import { cn } from '@/components/ui/cn';
 
 interface ProgressComponentProps {
     currentQuestion: number;
@@ -16,61 +17,59 @@ const ProgressComponent = ({ currentQuestion }: ProgressComponentProps) => {
     const totalQuestions = questions.length;
     const [quizResults, setQuizResults] = useState<QuestionResult[]>([]);
 
-    // Load quiz results from localStorage
     useEffect(() => {
         try {
             const resultsJSON = localStorage.getItem('quizResults');
             if (resultsJSON) {
-                const results: QuestionResult[] = JSON.parse(resultsJSON);
-                setQuizResults(results);
+                setQuizResults(JSON.parse(resultsJSON));
             }
         } catch (error) {
             console.error("Error loading quiz results:", error);
         }
-    }, [currentQuestion]); // Re-check whenever currentQuestion changes
+    }, [currentQuestion]);
 
-    // Calculate progress percentage
-    const progressPercentage = Math.round((currentQuestion / totalQuestions) * 100);
-
-    // Generate segments for each question
-    const renderProgressSegments = () => {
-        return questions.map((_, index) => {
-            const questionId = index + 1;
-            const result = quizResults.find(r => r.id === questionId);
-
-            // Determine segment color
-            let bgColor = "bg-gray-200"; // Default/unanswered
-            if (result) {
-                bgColor = result.isCorrect ? "bg-green-500" : "bg-red-500";
-            } else if (questionId === currentQuestion) {
-                bgColor = "bg-blue-500"; // Current question
-            }
-
-            return (
-                <div
-                    key={questionId}
-                    className={`h-2.5 ${bgColor} ${index === 0 ? "rounded-l-full" : ""} ${index === questions.length - 1 ? "rounded-r-full" : ""
-                        }`}
-                    style={{ width: `${100 / totalQuestions}%` }}
-                />
-            );
-        });
-    };
+    const answered = quizResults.length;
+    const correct = quizResults.filter(r => r.isCorrect).length;
 
     return (
-        <div className="max-w-6xl mx-auto px-4 pt-6">
-            <div className="flex items-center justify-between mb-2">
-                <div className="text-sm text-gray-600 font-medium">
-                    Question {currentQuestion} of {totalQuestions}
-                </div>
-                <div className="text-sm text-gray-600 font-medium">
-                    {progressPercentage}% Complete
-                </div>
+        <div className="mx-auto max-w-4xl px-6 pt-8">
+            <div className="mb-2.5 flex items-end justify-between">
+                <span className="field-label">
+                    Question{" "}
+                    <span className="text-bone">
+                        {String(currentQuestion).padStart(2, "0")}
+                    </span>{" "}
+                    / {totalQuestions}
+                </span>
+                <span className="field-label">
+                    <span className="text-sign">{correct}</span> correct ·{" "}
+                    {answered} answered
+                </span>
             </div>
 
-            {/* Segmented progress bar */}
-            <div className="w-full flex">
-                {renderProgressSegments()}
+            <div className="flex w-full gap-1" aria-hidden="true">
+                {questions.map((_, index) => {
+                    const questionId = index + 1;
+                    const result = quizResults.find(r => r.id === questionId);
+                    const isCurrent = questionId === currentQuestion;
+
+                    return (
+                        <div
+                            key={questionId}
+                            className={cn(
+                                "h-1.5 flex-1 rounded-full transition-colors",
+                                result
+                                    ? result.isCorrect
+                                        ? "bg-sign"
+                                        : "bg-reject"
+                                    : isCurrent
+                                        ? "bg-brand"
+                                        : "bg-hairline",
+                                isCurrent && !result && "ring-2 ring-brand/30",
+                            )}
+                        />
+                    );
+                })}
             </div>
         </div>
     );

@@ -1,0 +1,397 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
+import {
+  useAccount,
+  useChainId,
+  useSwitchChain,
+  useSendTransaction,
+  useSignTypedData,
+} from "wagmi";
+import type { Address } from "viem";
+import {
+  FaCheck,
+  FaTimes,
+  FaWallet,
+  FaArrowRight,
+  FaRedo,
+  FaSpinner,
+} from "react-icons/fa";
+import { CUSTOM_CHAIN_ID } from "@/app/constants";
+import { useNetwork } from "@/components/NetworkContext";
+import { fundAddress } from "@/lib/tenderly";
+import { freshSeed } from "@/lib/random";
+import {
+  buildRun,
+  TOTAL_CHALLENGES,
+  type Challenge,
+  type Decision,
+} from "@/data/tenderlyChallenges";
+import { Card } from "@/components/ui/Card";
+import { Button, buttonVariants } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import FeedbackComponent from "@/components/FeedbackComponent";
+import { cn } from "@/components/ui/cn";
+
+const SEED_KEY = "wiseTenderlySeed";
+
+interface Result {
+  decision: Decision;
+  correct: boolean;
+}
+
+function isUserRejection(err: unknown): boolean {
+  const e = err as { code?: number; name?: string; message?: string; shortMessage?: string; cause?: { code?: number; name?: string } };
+  const code = e?.code ?? e?.cause?.code;
+  const name = e?.name ?? e?.cause?.name ?? "";
+  const msg = (e?.shortMessage ?? e?.message ?? "").toLowerCase();
+  return (
+    code === 4001 ||
+    name === "UserRejectedRequestError" ||
+    msg.includes("reject") ||
+    msg.includes("denied") ||
+    msg.includes("user cancel")
+  );
+}
+
+function humanizeError(err: unknown): string {
+  const e = err as { shortMessage?: string; message?: string };
+  return e?.shortMessage ?? e?.message ?? "Something went wrong talking to your wallet.";
+}
+
+export default function TenderlyRunner() {
+  const { address, isConnected } = useAccount();
+  const chainId = useChainId();
+  const { switchChain } = useSwitchChain();
+  const { sendTransactionAsync } = useSendTransaction();
+  const { signTypedDataAsync } = useSignTypedData();
+  const { networkInfo } = useNetwork();
+
+  const [seed, setSeed] = useState<number | null>(null);
+  const [prep, setPrep] = useState<"idle" | "funding" | "ready" | "error">("idle");
+  const [prepError, setPrepError] = useState<string | null>(null);
+
+  const [index, setIndex] = useState(0);
+  const [results, setResults] = useState<Result[]>([]);
+  const [revealed, setRevealed] = useState<Result | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  const onRightChain = chainId === CUSTOM_CHAIN_ID;
+
+  // Mint a seed once we're connected on the right chain.
+  useEffect(() => {
+    if (!isConnected || !onRightChain || seed !== null) return;
+    const stored = sessionStorage.getItem(SEED_KEY);
+    const s = stored ? Number(stored) : freshSeed();
+    sessionStorage.setItem(SEED_KEY, String(s));
+    setSeed(s);
+  }, [isConnected, onRightChain, seed]);
+
+  // Fund the player with test ETH via the admin RPC.
+  useEffect(() => {
+    if (seed === null || !address || prep !== "idle") return;
+    if (!networkInfo?.adminRpcUrl) {
+      // No admin RPC — assume the account already holds test funds.
+      setPrep("ready");
+      return;
+    }
+    setPrep("funding");
+    fundAddress(networkInfo.adminRpcUrl, address)
+      .then(() => setPrep("ready"))
+      .catch((e) => {
+        setPrepError(humanizeError(e));
+        setPrep("ready"); // let them proceed; gas may already be present
+      });
+  }, [seed, address, networkInfo, prep]);
+
+  const run = useMemo<Challenge[]>(
+    () => (seed !== null && address ? buildRun(seed, address as Address) : []),
+    [seed, address],
+  );
+
+  const challenge = run[index];
+  const correctCount = results.filter((r) => r.correct).length;
+
+  function record(decision: Decision) {
+    if (!challenge) return;
+    const result: Result = { decision, correct: decision === challenge.expected };
+    setResults((prev) => [...prev, result]);
+    setRevealed(result);
+  }
+
+  async function decideViaWallet() {
+    if (!challenge) return;
+    setBusy(true);
+    setActionError(null);
+    try {
+      if (challenge.request.kind === "tx") {
+        await sendTransactionAsync({
+          to: challenge.request.to,
+          value: challenge.request.value,
+          data: challenge.request.data,
+          chainId: CUSTOM_CHAIN_ID,
+        });
+      } else {
+        await signTypedDataAsync({
+          domain: challenge.request.domain,
+          types: challenge.request.types,
+          primaryType: challenge.request.primaryType,
+          message: challenge.request.message,
+        });
+      }
+      record("sign");
+    } catch (err) {
+      if (isUserRejection(err)) record("reject");
+      else setActionError(humanizeError(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function next() {
+    setRevealed(null);
+    setActionError(null);
+    setIndex((i) => i + 1);
+  }
+
+  function newTest() {
+    const s = freshSeed();
+    sessionStorage.setItem(SEED_KEY, String(s));
+    setSeed(s);
+    setIndex(0);
+    setResults([]);
+    setRevealed(null);
+    setActionError(null);
+  }
+
+  // ---- Gates ----
+  if (!isConnected) {
+    return (
+      <Shell>
+        <Card className="mx-auto max-w-md p-8 text-center">
+          <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl border border-hairline-strong bg-raised text-brand">
+            <FaWallet size={20} />
+          </span>
+          <h1 className="mt-5 font-display text-2xl font-semibold text-bone">
+            Connect your wallet
+          </h1>
+          <p className="mt-3 text-sm leading-relaxed text-bone-dim">
+            You&apos;ll sign or reject {TOTAL_CHALLENGES} real, escalating
+            requests on a disposable test network. We&apos;ll fund you with test
+            ETH — nothing here can touch real assets.
+          </p>
+          <div className="mt-6 flex justify-center">
+            <ConnectButton chainStatus="icon" showBalance={false} />
+          </div>
+        </Card>
+      </Shell>
+    );
+  }
+
+  if (!onRightChain) {
+    return (
+      <Shell>
+        <Card className="mx-auto max-w-md p-8 text-center">
+          <h1 className="font-display text-2xl font-semibold text-bone">
+            Switch to the test network
+          </h1>
+          <p className="mt-3 text-sm leading-relaxed text-bone-dim">
+            Your wallet is on the wrong network. Switch to the Wise Signer
+            testnet to continue.
+          </p>
+          <div className="mt-6 flex flex-col items-center gap-3">
+            <Button onClick={() => switchChain({ chainId: CUSTOM_CHAIN_ID })}>
+              Switch network
+            </Button>
+            <Link
+              href="/tenderly/welcome"
+              className="text-sm text-muted transition-colors hover:text-bone"
+            >
+              Network not added yet? Set it up
+            </Link>
+          </div>
+        </Card>
+      </Shell>
+    );
+  }
+
+  if (prep !== "ready" || !challenge) {
+    // Finished all challenges → summary
+    if (run.length > 0 && index >= run.length) return <Summary correct={correctCount} total={run.length} onNewTest={newTest} />;
+    return (
+      <Shell>
+        <Card className="mx-auto flex max-w-md items-center gap-3 p-8">
+          <FaSpinner className="animate-spin text-brand" />
+          <p className="text-sm text-bone-dim">
+            {prep === "funding" ? "Funding your test wallet…" : "Preparing your challenges…"}
+          </p>
+        </Card>
+      </Shell>
+    );
+  }
+
+  // ---- Active challenge ----
+  return (
+    <Shell>
+      <div className="mx-auto max-w-2xl">
+        <ProgressDots index={index} results={results} />
+
+        <Card className="mt-6 overflow-hidden">
+          <div className="flex items-center justify-between border-b border-hairline px-5 py-3">
+            <Badge tone="brand">Level {challenge.level}</Badge>
+            <span className="font-mono text-xs text-muted">{challenge.origin}</span>
+          </div>
+
+          <div className="px-5 py-5">
+            <h1 className="font-display text-xl font-semibold text-bone">
+              {challenge.title}
+            </h1>
+            <p className="mt-2 text-sm leading-relaxed text-bone-dim">
+              {challenge.intent}
+            </p>
+
+            <p className="field-label mt-6 mb-2">Your wallet will show</p>
+            <div className="divide-y divide-hairline/70 rounded-xl border border-hairline">
+              {challenge.fields.map((f, i) => (
+                <div
+                  key={i}
+                  className={cn(
+                    "px-4 py-2.5",
+                    f.block
+                      ? "flex flex-col gap-1"
+                      : "flex items-center justify-between gap-4",
+                  )}
+                >
+                  <span className="field-label">{f.label}</span>
+                  <span
+                    className={cn(
+                      "font-mono text-bone",
+                      f.block ? "break-all text-xs" : "text-sm",
+                    )}
+                  >
+                    {f.value}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {!revealed ? (
+            <div className="border-t border-hairline p-4">
+              {actionError && (
+                <p className="mb-3 rounded-lg border border-reject/30 bg-reject/10 px-3 py-2 text-xs text-reject">
+                  {actionError}
+                </p>
+              )}
+              <div className="grid grid-cols-2 gap-3">
+                <Button variant="rejectOutline" onClick={() => record("reject")} disabled={busy}>
+                  <FaTimes size={13} /> Reject
+                </Button>
+                <Button variant="sign" onClick={decideViaWallet} disabled={busy}>
+                  {busy ? <FaSpinner className="animate-spin" size={13} /> : <FaWallet size={13} />}
+                  Review &amp; sign
+                </Button>
+              </div>
+              <p className="mt-3 text-center text-xs text-muted">
+                &ldquo;Review &amp; sign&rdquo; opens your wallet — you can still reject it there.
+              </p>
+            </div>
+          ) : (
+            <div className="border-t border-hairline p-4">
+              <FeedbackComponent
+                isCorrect={revealed.correct}
+                feedbackContent={{ pages: [verdictLine(revealed, challenge) + challenge.why] }}
+              />
+              <div className="mt-4 flex justify-end">
+                <Button onClick={next}>
+                  {index + 1 >= run.length ? "See results" : "Next"}{" "}
+                  <FaArrowRight size={12} />
+                </Button>
+              </div>
+            </div>
+          )}
+        </Card>
+      </div>
+    </Shell>
+  );
+}
+
+function verdictLine(r: Result, c: Challenge): string {
+  const did = r.decision === "sign" ? "signed" : "rejected";
+  const should = c.expected === "sign" ? "sign" : "reject";
+  if (r.correct) return `You **${did}** it — correct.\n\n`;
+  return `You **${did}** it, but the right call was to **${should}**.\n\n`;
+}
+
+function Shell({ children }: { children: React.ReactNode }) {
+  return <main className="min-h-screen bg-ink px-6 py-12">{children}</main>;
+}
+
+function ProgressDots({ index, results }: { index: number; results: Result[] }) {
+  return (
+    <div className="mx-auto max-w-2xl">
+      <div className="mb-2 flex items-end justify-between">
+        <span className="field-label">
+          Level <span className="text-bone">{String(index + 1).padStart(2, "0")}</span> /{" "}
+          {TOTAL_CHALLENGES}
+        </span>
+        <span className="field-label">
+          <span className="text-sign">{results.filter((r) => r.correct).length}</span> correct
+        </span>
+      </div>
+      <div className="flex gap-1">
+        {Array.from({ length: TOTAL_CHALLENGES }).map((_, i) => {
+          const r = results[i];
+          return (
+            <div
+              key={i}
+              className={cn(
+                "h-1.5 flex-1 rounded-full",
+                r ? (r.correct ? "bg-sign" : "bg-reject") : i === index ? "bg-brand" : "bg-hairline",
+              )}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function Summary({ correct, total, onNewTest }: { correct: number; total: number; onNewTest: () => void }) {
+  const pct = total ? (correct / total) * 100 : 0;
+  const tier =
+    pct >= 100 ? "Flawless" : pct >= 70 ? "Sharp eye" : pct >= 50 ? "Getting there" : "Worth another run";
+  return (
+    <Shell>
+      <div className="mx-auto max-w-md overflow-hidden rounded-2xl border border-hairline bg-surface text-center">
+        <div className="px-8 pt-8">
+          <Image src="/wise-signer.png" alt="" width={80} height={80} className="mx-auto" />
+          <Badge tone="brand" className="mt-4">Connected run complete</Badge>
+        </div>
+        <div className="px-8 py-8">
+          <p className="font-mono text-5xl font-semibold text-bone">
+            {correct}
+            <span className="text-muted">/{total}</span>
+          </p>
+          <h2 className="mt-5 font-display text-2xl font-semibold text-bone">{tier}</h2>
+          <p className="mt-2 text-sm text-bone-dim">
+            Each run is randomized — the safe and malicious requests shuffle, so
+            you can&apos;t coast on memory.
+          </p>
+          <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
+            <Button onClick={onNewTest}>
+              <FaRedo size={13} /> New randomized run
+            </Button>
+            <Link href="/" className={buttonVariants({ variant: "secondary" })}>
+              Home
+            </Link>
+          </div>
+        </div>
+      </div>
+    </Shell>
+  );
+}
