@@ -39,6 +39,17 @@ interface BasicLayoutProps {
     children: ReactNode;
 }
 
+// Defined at module scope so its identity is stable — redefining it inside the
+// component remounts the whole subtree (and re-inits wallet connectors) on every
+// render.
+const BasicLayout: React.FC<BasicLayoutProps> = ({ children }) => (
+    <>
+        <Header />
+        {children}
+        <Footer />
+    </>
+);
+
 export const NetworkProvider: React.FC<NetworkProviderProps> = ({
     children
 }) => {
@@ -126,15 +137,6 @@ export const NetworkProvider: React.FC<NetworkProviderProps> = ({
             }
         }
     }, [mounted]);
-
-    // Create a basic layout that will be consistent across server and client
-    const BasicLayout: React.FC<BasicLayoutProps> = ({ children }) => (
-        <>
-            <Header />
-            {children}
-            <Footer />
-        </>
-    );
 
     // Create the network context value
     const networkContextValue = {

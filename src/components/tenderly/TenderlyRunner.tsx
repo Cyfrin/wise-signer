@@ -6,7 +6,6 @@ import Link from "next/link";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import {
   useAccount,
-  useChainId,
   useSwitchChain,
   useSendTransaction,
   useSignTypedData,
@@ -65,8 +64,9 @@ function humanizeError(err: unknown): string {
 }
 
 export default function TenderlyRunner() {
-  const { address, isConnected } = useAccount();
-  const chainId = useChainId();
+  // chainId from useAccount reflects the WALLET's actual network (useChainId
+  // returns the config's chain, which hides a wrong-network wallet).
+  const { address, isConnected, chainId } = useAccount();
   const { switchChain } = useSwitchChain();
   const { sendTransactionAsync } = useSendTransaction();
   const { signTypedDataAsync } = useSignTypedData();
@@ -178,6 +178,26 @@ export default function TenderlyRunner() {
     setActionError(null);
   }
 
+  async function addNetworkToWallet() {
+    const eth = (window as unknown as { ethereum?: { request: (a: unknown) => Promise<unknown> } }).ethereum;
+    if (!eth || !networkInfo) return;
+    try {
+      await eth.request({
+        method: "wallet_addEthereumChain",
+        params: [
+          {
+            chainId: networkInfo.chainId,
+            chainName: networkInfo.name,
+            nativeCurrency: { name: "Ethereum", symbol: "ETH", decimals: 18 },
+            rpcUrls: [networkInfo.rpcUrl],
+          },
+        ],
+      });
+    } catch {
+      /* user dismissed the prompt */
+    }
+  }
+
   // ---- Gates ----
   if (!isConnected) {
     return (
@@ -215,13 +235,16 @@ export default function TenderlyRunner() {
           </p>
           <div className="mt-6 flex flex-col items-center gap-3">
             <Button onClick={() => switchChain({ chainId: CUSTOM_CHAIN_ID })}>
-              Switch network
+              Switch to it
+            </Button>
+            <Button variant="secondary" onClick={addNetworkToWallet}>
+              <FaWallet size={13} /> Add network to MetaMask
             </Button>
             <Link
               href="/tenderly/welcome"
               className="text-sm text-muted transition-colors hover:text-bone"
             >
-              Network not added yet? Set it up
+              Set up a different network
             </Link>
           </div>
         </Card>
@@ -279,30 +302,10 @@ export default function TenderlyRunner() {
               </p>
             )}
 
-            <p className="field-label mt-6 mb-2">Your wallet will show</p>
-            <div className="divide-y divide-hairline/70 rounded-xl border border-hairline">
-              {challenge.fields.map((f, i) => (
-                <div
-                  key={i}
-                  className={cn(
-                    "px-4 py-2.5",
-                    f.block
-                      ? "flex flex-col gap-1"
-                      : "flex items-center justify-between gap-4",
-                  )}
-                >
-                  <span className="field-label">{f.label}</span>
-                  <span
-                    className={cn(
-                      "font-mono text-bone",
-                      f.block ? "break-all text-xs" : "text-sm",
-                    )}
-                  >
-                    {f.value}
-                  </span>
-                </div>
-              ))}
-            </div>
+            <p className="mt-6 rounded-lg border border-hairline bg-raised px-4 py-3 text-sm text-bone-dim">
+              Don&apos;t take our word for it — open your wallet, read the real
+              request, and check every field against what you intended above.
+            </p>
           </div>
 
           {!revealed ? (
@@ -327,6 +330,30 @@ export default function TenderlyRunner() {
             </div>
           ) : (
             <div className="border-t border-hairline p-4">
+              <p className="field-label mb-2">What the request contained</p>
+              <div className="mb-4 divide-y divide-hairline/70 rounded-xl border border-hairline">
+                {challenge.fields.map((f, i) => (
+                  <div
+                    key={i}
+                    className={cn(
+                      "px-4 py-2.5",
+                      f.block
+                        ? "flex flex-col gap-1"
+                        : "flex items-center justify-between gap-4",
+                    )}
+                  >
+                    <span className="field-label">{f.label}</span>
+                    <span
+                      className={cn(
+                        "font-mono text-bone",
+                        f.block ? "break-all text-xs" : "text-sm",
+                      )}
+                    >
+                      {f.value}
+                    </span>
+                  </div>
+                ))}
+              </div>
               <FeedbackComponent
                 isCorrect={revealed.correct}
                 feedbackContent={{ pages: [verdictLine(revealed, challenge) + challenge.why] }}

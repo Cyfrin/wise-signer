@@ -91,15 +91,18 @@ export default function WelcomePage() {
 
   const handleExistingEndpoint = () => {
     if (!endpointUrl.trim()) return setError("Enter your public RPC endpoint URL.");
+    if (!adminUrl.trim())
+      return setError("Enter your admin RPC URL — it's required to fund your test wallet.");
     try {
       new URL(endpointUrl);
+      new URL(adminUrl);
     } catch {
-      return setError("That doesn't look like a valid URL.");
+      return setError("One of those doesn't look like a valid URL.");
     }
     setError(null);
     save({
       rpcUrl: endpointUrl.trim(),
-      adminRpcUrl: adminUrl.trim() || undefined,
+      adminRpcUrl: adminUrl.trim(),
       chainId: "0x57135",
       name: VIRTUAL_NET_DISPLAY_NAME,
     });
@@ -229,7 +232,8 @@ export default function WelcomePage() {
           <BackButton onClick={reset} />
           <h2 className="mt-4 font-display text-2xl font-semibold text-bone">Use an existing network</h2>
           <p className="mt-2 text-bone-dim">
-            Paste your vnet&apos;s public RPC. The admin RPC is optional — it lets us fund your test wallet automatically.
+            Paste both RPC URLs from your vnet. The admin RPC is required — it&apos;s
+            what funds your test wallet with ETH and tokens.
           </p>
           <div className="mt-6 space-y-4">
             <div>
@@ -237,7 +241,7 @@ export default function WelcomePage() {
               <input type="url" value={endpointUrl} onChange={(e) => setEndpointUrl(e.target.value)} placeholder="https://virtual.sepolia.rpc.tenderly.co/…" className={inputClass} />
             </div>
             <div>
-              <label className={labelClass}>Admin RPC URL <span className="text-faint">(optional)</span></label>
+              <label className={labelClass}>Admin RPC URL</label>
               <input type="url" value={adminUrl} onChange={(e) => setAdminUrl(e.target.value)} placeholder="https://virtual.sepolia.rpc.tenderly.co/…/admin" className={inputClass} />
             </div>
             {error && <p className="text-sm text-reject">{error}</p>}
