@@ -25,8 +25,8 @@ const Header = () => {
 
   const pathname = usePathname();
   const { networkInfo } = useNetwork();
-  const isTenderlyQuestionsPage =
-    pathname?.startsWith("/tenderly/questions") ?? false;
+  const isTenderlyChallengePage =
+    pathname?.startsWith("/tenderly/challenge") ?? false;
 
   useEffect(() => setMounted(true), []);
 
@@ -45,7 +45,7 @@ const Header = () => {
     };
   }, [open]);
 
-  const showConnectButton = mounted && isTenderlyQuestionsPage && !!networkInfo;
+  const showConnectButton = mounted && isTenderlyChallengePage && !!networkInfo;
 
   return (
     <header className="sticky top-0 z-40 border-b border-hairline bg-ink/80 backdrop-blur-md">

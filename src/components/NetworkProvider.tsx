@@ -97,7 +97,7 @@ export const NetworkProvider: React.FC<NetworkProviderProps> = ({
     // Determine page types based on pathname
     const isTenderlyPage = pathname?.startsWith('/tenderly') || false;
     const isSimulatedPage = pathname?.startsWith('/simulated') || false;
-    const isTenderlyQuestionsPage = pathname?.startsWith('/tenderly/questions') || false;
+    const isTenderlyChallengePage = pathname?.startsWith('/tenderly/challenge') || false;
     const isTenderlyWelcomePage = pathname === '/tenderly/welcome';
 
     // Mark as mounted after first render
@@ -134,14 +134,14 @@ export const NetworkProvider: React.FC<NetworkProviderProps> = ({
 
         // Only initialize wagmi/WalletConnect on the connected-wallet challenge
         // pages — never on the landing/simulated pages, even if a network is saved.
-        if (info && isTenderlyQuestionsPage) {
+        if (info && isTenderlyChallengePage) {
             try {
                 setWagmiConfig(buildWagmiConfig(info));
             } catch (error) {
                 console.error("Error creating wagmi config:", error);
             }
         }
-    }, [mounted, isTenderlyQuestionsPage]);
+    }, [mounted, isTenderlyChallengePage]);
 
     // Create the network context value
     const networkContextValue = {
@@ -197,7 +197,7 @@ export const NetworkProvider: React.FC<NetworkProviderProps> = ({
     }
 
     // If on questions page but no network info, show setup required
-    if ((!networkInfo || !wagmiConfig) && isTenderlyQuestionsPage) {
+    if ((!networkInfo || !wagmiConfig) && isTenderlyChallengePage) {
         return (
             <NetworkContextProvider value={networkContextValue}>
                 <BasicLayout>
@@ -225,7 +225,7 @@ export const NetworkProvider: React.FC<NetworkProviderProps> = ({
     }
 
     // For Tenderly question pages with network info and valid wagmi config
-    if (isTenderlyQuestionsPage && networkInfo && wagmiConfig) {
+    if (isTenderlyChallengePage && networkInfo && wagmiConfig) {
         // Critical: Use the dynamically imported Wagmi providers
         return (
             <NetworkContextProvider value={networkContextValue}>

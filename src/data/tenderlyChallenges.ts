@@ -5,7 +5,6 @@ import {
   maxUint256,
   type Address,
 } from "viem";
-import { CUSTOM_CHAIN_ID } from "@/app/constants";
 import {
   type Rng,
   makeRng,
@@ -222,7 +221,7 @@ function uniswapSwap(rng: Rng, player: Address): Challenge {
   };
 }
 
-function permitSignature(rng: Rng, player: Address): Challenge {
+function permitSignature(rng: Rng, player: Address, chainId: number): Challenge {
   const pool = randomHexAddress(rng);
   const attacker = randomHexAddress(rng);
   const deposit = pick(rng, [250, 500, 1000]);
@@ -244,7 +243,7 @@ function permitSignature(rng: Rng, player: Address): Challenge {
     ],
     request: {
       kind: "typedData",
-      domain: { name: "USD Coin", version: "2", chainId: CUSTOM_CHAIN_ID, verifyingContract: USDC },
+      domain: { name: "USD Coin", version: "2", chainId, verifyingContract: USDC },
       types: {
         Permit: [
           { name: "owner", type: "address" },
@@ -297,7 +296,9 @@ function maliciousCalldata(rng: Rng, player: Address): Challenge {
   };
 }
 
-const GENERATORS = [
+type Generator = (rng: Rng, player: Address, chainId: number) => Challenge;
+
+const GENERATORS: Generator[] = [
   nativeTransfer,
   tokenTransfer,
   tokenApproval,
@@ -308,9 +309,13 @@ const GENERATORS = [
 ];
 
 /** Build a full, deterministic-for-the-seed run of challenges for a player. */
-export function buildRun(seed: number, player: Address): Challenge[] {
+export function buildRun(
+  seed: number,
+  player: Address,
+  chainId: number,
+): Challenge[] {
   const rng = makeRng(seed);
-  return GENERATORS.map((gen) => gen(rng, player));
+  return GENERATORS.map((gen) => gen(rng, player, chainId));
 }
 
 export const TOTAL_CHALLENGES = GENERATORS.length;

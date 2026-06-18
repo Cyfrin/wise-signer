@@ -146,8 +146,11 @@ export default function TenderlyRunner() {
   }, [seed, address, networkInfo, prep]);
 
   const run = useMemo<Challenge[]>(
-    () => (seed !== null && address ? buildRun(seed, address as Address) : []),
-    [seed, address],
+    () =>
+      seed !== null && address
+        ? buildRun(seed, address as Address, targetChainId)
+        : [],
+    [seed, address, targetChainId],
   );
 
   const challenge = run[index];

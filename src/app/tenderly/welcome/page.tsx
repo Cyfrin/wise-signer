@@ -161,7 +161,7 @@ export default function WelcomePage() {
   const startChallenge = () => {
     if (!networkInfo) return setError("Set up your network first.");
     setIsNavigating(true);
-    window.location.href = "/tenderly/questions/1";
+    window.location.href = "/tenderly/challenge";
   };
 
   const renderContent = () => {
