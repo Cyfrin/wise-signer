@@ -12,8 +12,6 @@ import {
 } from "wagmi";
 import type { Address } from "viem";
 import {
-  FaCheck,
-  FaTimes,
   FaWallet,
   FaArrowRight,
   FaRedo,
@@ -315,17 +313,18 @@ export default function TenderlyRunner() {
                   {actionError}
                 </p>
               )}
-              <div className="grid grid-cols-2 gap-3">
-                <Button variant="rejectOutline" onClick={() => record("reject")} disabled={busy}>
-                  <FaTimes size={13} /> Reject
-                </Button>
-                <Button variant="sign" onClick={decideViaWallet} disabled={busy}>
-                  {busy ? <FaSpinner className="animate-spin" size={13} /> : <FaWallet size={13} />}
-                  Review &amp; sign
-                </Button>
-              </div>
+              <Button
+                variant="primary"
+                onClick={decideViaWallet}
+                disabled={busy}
+                className="w-full"
+              >
+                {busy ? <FaSpinner className="animate-spin" size={13} /> : <FaWallet size={13} />}
+                Open the request in your wallet
+              </Button>
               <p className="mt-3 text-center text-xs text-muted">
-                &ldquo;Review &amp; sign&rdquo; opens your wallet — you can still reject it there.
+                Read the real transaction, then <strong className="text-bone-dim">approve or
+                reject it in your wallet</strong> — that&apos;s your answer.
               </p>
             </div>
           ) : (
