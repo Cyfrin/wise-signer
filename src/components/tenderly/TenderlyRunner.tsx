@@ -37,7 +37,7 @@ import FeedbackComponent from "@/components/FeedbackComponent";
 import { Erc8213Note } from "@/components/Erc8213Note";
 import { cn } from "@/components/ui/cn";
 
-const SEED_KEY = "wiseTenderlySeed";
+const RUN_KEY = "wiseTenderlyRun";
 
 interface Result {
   decision: Decision;
@@ -88,14 +88,37 @@ export default function TenderlyRunner() {
     : CUSTOM_CHAIN_ID;
   const onRightChain = chainId === targetChainId;
 
-  // Mint a seed once we're connected on the right chain.
+  // Restore an in-progress run (or start a fresh one) once connected on-chain.
   useEffect(() => {
     if (!isConnected || !onRightChain || seed !== null) return;
-    const stored = sessionStorage.getItem(SEED_KEY);
-    const s = stored ? Number(stored) : freshSeed();
-    sessionStorage.setItem(SEED_KEY, String(s));
-    setSeed(s);
+    try {
+      const stored = sessionStorage.getItem(RUN_KEY);
+      if (stored) {
+        const saved = JSON.parse(stored) as { seed: number; results: Result[] };
+        const savedResults = saved.results ?? [];
+        setSeed(saved.seed);
+        setResults(savedResults);
+        setIndex(savedResults.length); // resume at the next undecided challenge
+        return;
+      }
+    } catch {
+      /* ignore corrupt saved state */
+    }
+    setSeed(freshSeed());
   }, [isConnected, onRightChain, seed]);
+
+  // Persist progress so a refresh resumes the same run.
+  useEffect(() => {
+    if (seed === null) return;
+    sessionStorage.setItem(RUN_KEY, JSON.stringify({ seed, results }));
+  }, [seed, results]);
+
+  // Reflect the current level in the URL (refresh restores from storage).
+  useEffect(() => {
+    if (seed === null) return;
+    const level = Math.min(index + 1, TOTAL_CHALLENGES);
+    window.history.replaceState(null, "", `${window.location.pathname}?level=${level}`);
+  }, [index, seed]);
 
   // Fund the player with test ETH + ERC-20 balances via the admin RPC.
   useEffect(() => {
@@ -181,9 +204,8 @@ export default function TenderlyRunner() {
   }
 
   function newTest() {
-    const s = freshSeed();
-    sessionStorage.setItem(SEED_KEY, String(s));
-    setSeed(s);
+    sessionStorage.removeItem(RUN_KEY);
+    setSeed(freshSeed());
     setIndex(0);
     setResults([]);
     setRevealed(null);

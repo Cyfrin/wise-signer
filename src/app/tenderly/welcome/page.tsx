@@ -125,7 +125,10 @@ export default function WelcomePage() {
     setError(null);
     try {
       const info = await provisionVnet(apiKey.trim(), accountSlug.trim(), projectSlug.trim());
-      await finalize(info.publicRpcUrl, info.adminRpcUrl ?? info.publicRpcUrl);
+      // Use the admin RPC for the wallet too — it's a superset of the public RPC
+      // and avoids the public endpoint's stricter submission limits.
+      const url = info.adminRpcUrl ?? info.publicRpcUrl;
+      await finalize(url, url);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to create the network.");
       setSetupStage("error");

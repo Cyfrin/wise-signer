@@ -132,14 +132,16 @@ export const NetworkProvider: React.FC<NetworkProviderProps> = ({
 
         const info = loadNetworkInfo();
 
-        if (info) {
+        // Only initialize wagmi/WalletConnect on the connected-wallet challenge
+        // pages — never on the landing/simulated pages, even if a network is saved.
+        if (info && isTenderlyQuestionsPage) {
             try {
                 setWagmiConfig(buildWagmiConfig(info));
             } catch (error) {
                 console.error("Error creating wagmi config:", error);
             }
         }
-    }, [mounted]);
+    }, [mounted, isTenderlyQuestionsPage]);
 
     // Create the network context value
     const networkContextValue = {
