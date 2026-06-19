@@ -32,12 +32,7 @@ export interface TypedDataRequest {
   message: Record<string, unknown>;
 }
 
-export interface PersonalSignRequest {
-  kind: "personalSign";
-  message: string;
-}
-
-export type WalletRequest = TxRequest | TypedDataRequest | PersonalSignRequest;
+export type WalletRequest = TxRequest | TypedDataRequest;
 
 export interface ReviewField {
   label: string;
@@ -87,12 +82,6 @@ const SAFE_TX_TYPES = {
     { name: "refundReceiver", type: "address" },
     { name: "nonce", type: "uint256" },
   ],
-};
-
-const FAKE_DOMAINS: Record<string, string> = {
-  "app.uniswap.org": "app.uniswaq.org",
-  "app.aave.com": "app-aave.com",
-  "opensea.io": "0pensea.io",
 };
 
 const usdc = (n: number) => parseUnits(String(n), 6);
@@ -271,36 +260,41 @@ function permitSignature(rng: Rng, player: Address, chainId: number): Challenge 
   };
 }
 
-function siweSignature(rng: Rng, player: Address, chainId: number): Challenge {
-  const real = pick(rng, Object.keys(FAKE_DOMAINS));
+function delegateSignature(rng: Rng, player: Address, chainId: number): Challenge {
+  const token = randomHexAddress(rng); // governance token contract
+  const attacker = randomHexAddress(rng);
+  const nonce = randInt(rng, 0, 12);
   const trap = chance(rng);
-  const claimed = trap ? (FAKE_DOMAINS[real] as string) : real;
-  const nonce = Math.floor(rng() * 1e16).toString(36);
-  const message = `${claimed} wants you to sign in with your Ethereum account:
-${player}
-
-Sign in with Ethereum to ${claimed}.
-
-URI: https://${claimed}
-Version: 1
-Chain ID: ${chainId}
-Nonce: ${nonce}
-Issued At: 2026-01-01T00:00:00.000Z`;
+  const delegatee = trap ? attacker : player;
+  const expiry = BigInt(1_900_000_000);
   return {
     level: 6,
-    title: "Sign in to a site",
-    origin: real,
-    intent: `You're signing in to ${real}. A sign-in message should name that exact domain — and nothing else.`,
+    title: "Delegate your governance votes",
+    origin: "app.governance.xyz",
+    intent: `Delegate your voting power to yourself (${player}) so you can vote. The delegatee should be your own address.`,
     fields: [
-      { label: "Type", value: "Sign-in · personal_sign" },
-      { label: "Message names", value: claimed },
-      { label: "You intended", value: real },
+      { label: "Type", value: "EIP-712 · Delegation" },
+      { label: "Token", value: token, block: true },
+      { label: "Delegatee", value: delegatee, block: true },
+      { label: "Nonce", value: String(nonce) },
     ],
-    request: { kind: "personalSign", message },
+    request: {
+      kind: "typedData",
+      domain: { name: "Governance Token", version: "1", chainId, verifyingContract: token },
+      types: {
+        Delegation: [
+          { name: "delegatee", type: "address" },
+          { name: "nonce", type: "uint256" },
+          { name: "expiry", type: "uint256" },
+        ],
+      },
+      primaryType: "Delegation",
+      message: { delegatee, nonce: BigInt(nonce), expiry },
+    },
     expected: trap ? "reject" : "sign",
     why: trap
-      ? `The sign-in message authenticates you to ${claimed}, a look-alike of ${real}. Signing it can let an attacker log in as you on that other site. The domain in the message must match the site you're actually on.`
-      : `The message names ${real}, exactly the site you meant to sign in to. Safe to sign.`,
+      ? `The delegatee is an unknown address, not you. Signing this hands your voting power to an attacker, who could push through malicious proposals with your votes. The delegatee must be the address you intend — here, your own.`
+      : `The delegatee is your own address, exactly as intended. Safe to sign — you keep your voting power.`,
   };
 }
 
@@ -345,7 +339,7 @@ const GENERATORS: Generator[] = [
   tokenApproval,
   safeTxSignature,
   permitSignature,
-  siweSignature,
+  delegateSignature,
   maliciousCalldata,
 ];
 

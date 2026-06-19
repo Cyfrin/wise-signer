@@ -9,7 +9,6 @@ import {
   useSwitchChain,
   useSendTransaction,
   useSignTypedData,
-  useSignMessage,
 } from "wagmi";
 import type { Address } from "viem";
 import {
@@ -71,7 +70,6 @@ export default function TenderlyRunner() {
   const { switchChain } = useSwitchChain();
   const { sendTransactionAsync } = useSendTransaction();
   const { signTypedDataAsync } = useSignTypedData();
-  const { signMessageAsync } = useSignMessage();
   const { networkInfo } = useNetwork();
 
   const [seed, setSeed] = useState<number | null>(null);
@@ -164,9 +162,7 @@ export default function TenderlyRunner() {
       ? challenge.request.data
         ? { label: "Calldata Digest", digest: calldataDigest(challenge.request.data) }
         : null
-      : challenge.request.kind === "typedData"
-        ? { label: "EIP-712 Digest", digest: eip712Digest(challenge.request) }
-        : null; // personal_sign has no ERC-8213 digest
+      : { label: "EIP-712 Digest", digest: eip712Digest(challenge.request) };
 
   function record(decision: Decision) {
     if (!challenge) return;
@@ -187,15 +183,13 @@ export default function TenderlyRunner() {
           data: challenge.request.data,
           chainId: targetChainId,
         });
-      } else if (challenge.request.kind === "typedData") {
+      } else {
         await signTypedDataAsync({
           domain: challenge.request.domain,
           types: challenge.request.types,
           primaryType: challenge.request.primaryType,
           message: challenge.request.message,
         });
-      } else {
-        await signMessageAsync({ message: challenge.request.message });
       }
       record("sign");
     } catch (err) {
