@@ -9,6 +9,9 @@ import SimulatedWebsite from "./SimulatedWebsite";
 import FeedbackComponent from "./FeedbackComponent";
 import ProgressComponent from "./ProgressComponent";
 import { FakeWebsiteType, TransactionDetails, SignatureDetails } from "@/types";
+import { Button } from "@/components/ui/Button";
+import { Erc8213Note } from "@/components/Erc8213Note";
+import { calldataDigest } from "@/lib/erc8213";
 import React, { forwardRef } from "react";
 
 interface QuestionResult {
@@ -78,6 +81,16 @@ const PageRenderer = forwardRef((props: PageRendererProps, ref) => {
     const fakeWebsiteType = 'fakeWebsiteType' in props ? props.fakeWebsiteType : undefined;
     const questionId = 'questionId' in props ? props.questionId : undefined;
 
+    // ERC-8213 calldata digest, shown after answering transaction questions.
+    const txCalldata =
+        transactionOrSignatureDetails &&
+        "data" in transactionOrSignatureDetails &&
+        typeof transactionOrSignatureDetails.data === "string" &&
+        transactionOrSignatureDetails.data.startsWith("0x") &&
+        transactionOrSignatureDetails.data.length > 2
+            ? (transactionOrSignatureDetails.data as `0x${string}`)
+            : null;
+
     // Check localStorage and reset feedback when questionNumber changes
     useEffect(() => {
         checkQuestionAnsweredStatus();
@@ -87,6 +100,15 @@ const PageRenderer = forwardRef((props: PageRendererProps, ref) => {
         // Feedback is only shown after an explicit user action (e.g., answering).
         setShowFeedback(false);
     }, [questionNumber]);
+
+    // Dismiss the wrong-answer popup with Escape
+    useEffect(() => {
+        if (!showWrongAnswerPopup) return;
+        const onKey = (e: KeyboardEvent) =>
+            e.key === "Escape" && setShowWrongAnswerPopup(false);
+        document.addEventListener("keydown", onKey);
+        return () => document.removeEventListener("keydown", onKey);
+    }, [showWrongAnswerPopup]);
 
     // Scroll to feedback when it appears
     useEffect(() => {
@@ -191,13 +213,13 @@ const PageRenderer = forwardRef((props: PageRendererProps, ref) => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-20 relative">
+        <div className="relative min-h-screen bg-ink pb-20">
             <div className="w-full">
                 <ProgressComponent currentQuestion={questionNumber} />
 
                 <QuestionComponent
                     ref={questionComponentRef}
-                    question={`${questionNumber}. ${question}`}
+                    question={question}
                     options={options}
                     correctAnswers={correctAnswers}
                     type={type}
@@ -220,11 +242,17 @@ const PageRenderer = forwardRef((props: PageRendererProps, ref) => {
                 />
 
                 {type === "signOrReject" && showFeedback && (
-                    <div ref={feedbackRef} className="max-w-6xl mx-auto mt-8">
+                    <div ref={feedbackRef} className="mx-auto mt-8 max-w-4xl px-6">
                         <FeedbackComponent
                             isCorrect={isCorrect}
                             feedbackContent={feedbackContent}
                         />
+                        {txCalldata && (
+                            <Erc8213Note
+                                label="Calldata Digest"
+                                digest={calldataDigest(txCalldata)}
+                            />
+                        )}
                     </div>
                 )}
 
@@ -268,32 +296,39 @@ const PageRenderer = forwardRef((props: PageRendererProps, ref) => {
             )}
 
             {showWrongAnswerPopup && wrongAnswerPopupContent && (
-                <div className="fixed inset-0 flex items-center justify-center z-50" onClick={() => setShowWrongAnswerPopup(false)}>
-                    <div className="fixed inset-0 bg-black bg-opacity-50" />
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                    role="dialog"
+                    aria-modal="true"
+                    onClick={() => setShowWrongAnswerPopup(false)}
+                >
+                    <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
                     <div
-                        className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4 relative z-10"
+                        className="relative z-10 w-full max-w-md overflow-hidden rounded-xl border border-reject/40 bg-surface shadow-2xl shadow-black/50"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <button
-                            onClick={() => setShowWrongAnswerPopup(false)}
-                            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
-                        >
-                            <FaTimes />
-                        </button>
-                        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
-                            <div className="flex">
-                                <div className="ml-3">
-                                    <p className="text-red-800 font-medium">You signed something you shouldn't have!</p>
-                                    <p className="text-red-700 mt-1">{wrongAnswerPopupContent}</p>
-                                </div>
+                        <div className="flex items-start gap-3 border-b border-reject/20 bg-reject/10 px-6 py-4">
+                            <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-reject/15 text-reject">
+                                <FaTimes size={15} />
+                            </span>
+                            <div>
+                                <p className="font-display font-semibold text-reject">
+                                    You signed something you shouldn&apos;t have
+                                </p>
+                                <p className="mt-1 text-sm leading-relaxed text-bone-dim">
+                                    {wrongAnswerPopupContent}
+                                </p>
                             </div>
                         </div>
-                        <button
-                            onClick={() => setShowWrongAnswerPopup(false)}
-                            className="cursor-pointer w-full mt-4 inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none"
-                        >
-                            I understand
-                        </button>
+                        <div className="p-4">
+                            <Button
+                                variant="reject"
+                                onClick={() => setShowWrongAnswerPopup(false)}
+                                className="w-full"
+                            >
+                                I understand
+                            </Button>
+                        </div>
                     </div>
                 </div>
             )}

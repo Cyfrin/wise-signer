@@ -19,11 +19,10 @@ export const processMarkdownNewlines = (content: string): string => {
 };
 
 const markdownComponents = {
-    // Simplified pre component
     pre: (props: ComponentPropsWithoutRef<'pre'>) => {
         return (
             <pre
-                className="max-w-full bg-gray-50 rounded-md p-3 my-4 overflow-x-auto"
+                className="max-w-full bg-raised border border-hairline rounded-lg p-3 my-4 overflow-x-auto text-bone"
                 style={{
                     whiteSpace: 'pre-wrap',
                     overflowWrap: 'anywhere'
@@ -33,14 +32,13 @@ const markdownComponents = {
         );
     },
 
-    // Code component handles syntax highlighting directly
     code: ({ className, children, ...props }: ComponentPropsWithoutRef<'code'>) => {
         const isInline = !className?.includes('language-');
 
         if (isInline) {
             return (
                 <code
-                    className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono"
+                    className="bg-raised border border-hairline px-1.5 py-0.5 rounded text-[0.85em] font-mono text-bone break-all"
                     {...props}
                 >
                     {children}
@@ -48,7 +46,6 @@ const markdownComponents = {
             );
         }
 
-        // Extract language from className
         const match = /language-(\w+)/.exec(className || '');
         const language = match ? match[1] : 'text';
         const code = String(children);
@@ -59,11 +56,13 @@ const markdownComponents = {
                     language={language}
                     style={oneDark}
                     customStyle={{
-                        borderRadius: '0.375rem',
+                        borderRadius: '0.5rem',
                         padding: '0.75rem',
-                        fontSize: '0.875rem',
+                        fontSize: '0.85rem',
                         lineHeight: '1.5',
                         margin: '1rem 0',
+                        background: '#1e232c',
+                        border: '1px solid #2a2f3a',
                         wordBreak: 'break-all',
                         whiteSpace: 'pre-wrap'
                     }}
@@ -82,18 +81,13 @@ const markdownComponents = {
         );
     },
 
-    // Enhanced paragraph component with special handling for image groups
     p: ({ children, ...props }: ComponentPropsWithoutRef<'p'>) => {
-        // Handle the case where we're trying to get a string from children
         const contentString = typeof children === 'string' ? children : '';
 
-        // Special handling for non-breaking space paragraphs
         if (contentString.trim() === '&nbsp;') {
             return <div className="h-4" aria-hidden="true" />;
         }
 
-        // If this is a paragraph with only images (without other content between them),
-        // add a special class to make them display side by side
         const childrenArray = React.Children.toArray(children);
         const imageNodes = childrenArray.filter(child =>
             React.isValidElement(child) &&
@@ -118,7 +112,7 @@ const markdownComponents = {
 
         return (
             <p
-                className="max-w-full mb-4"
+                className="max-w-full mb-4 leading-relaxed text-bone-dim"
                 style={{
                     wordWrap: 'break-word',
                     overflowWrap: 'break-word'
@@ -130,9 +124,7 @@ const markdownComponents = {
         );
     },
 
-    // Add image component with responsive styling
     img: (props: ComponentPropsWithoutRef<'img'>) => {
-        // Get the parent element to see if this is in an image group
         const isInImageGroup =
             props.className &&
             typeof props.className === 'string' &&
@@ -141,7 +133,7 @@ const markdownComponents = {
         return (
             <img
                 {...props}
-                className={`rounded-md ${isInImageGroup ? 'inline-block max-w-[30%] m-2' : 'block max-w-full mx-auto my-4'} hover:shadow-lg transition-shadow duration-200 ${props.className || ''}`}
+                className={`rounded-lg border border-hairline ${isInImageGroup ? 'inline-block max-w-[30%] m-2' : 'block max-w-full mx-auto my-4'} ${props.className || ''}`}
                 alt={props.alt || ""}
                 style={{
                     ...(props.style || {}),
@@ -151,20 +143,17 @@ const markdownComponents = {
         );
     },
 
-    // Add styling for links with target="_blank"
     a: (props: ComponentPropsWithoutRef<'a'>) => (
         <a
-            className="text-blue-600 hover:text-blue-800 hover:underline"
+            className="text-brand hover:text-brand-strong underline underline-offset-2"
             target="_blank"
             rel="noopener noreferrer"
             {...props}
         />
     ),
 
-    // Enhanced handling for breaks to ensure they create vertical space
     br: () => <div className="h-4" aria-hidden="true" />,
 
-    // Handle consecutive newlines in text nodes
     text: ({ children }: { children?: React.ReactNode }) => {
         const content = typeof children === 'string' ? children : '';
 
@@ -175,77 +164,69 @@ const markdownComponents = {
         return <>{children}</>;
     },
 
-    // Add list item component
     li: (props: ComponentPropsWithoutRef<'li'>) => (
-        <li className="ml-6 mb-2" {...props} />
+        <li className="ml-6 mb-2 text-bone-dim" {...props} />
     ),
 
-    // Add ordered list component
     ol: (props: ComponentPropsWithoutRef<'ol'>) => (
-        <ol className="list-decimal pl-4 mb-4" {...props} />
+        <ol className="list-decimal pl-4 mb-4 marker:text-faint" {...props} />
     ),
 
-    // Add unordered list component
     ul: (props: ComponentPropsWithoutRef<'ul'>) => (
-        <ul className="list-disc pl-4 mb-4" {...props} />
+        <ul className="list-disc pl-4 mb-4 marker:text-faint" {...props} />
     ),
 
-    // Add heading components
     h1: (props: ComponentPropsWithoutRef<'h1'>) => (
-        <h1 className="text-2xl font-bold mt-6 mb-4" {...props} />
+        <h1 className="font-display text-2xl font-semibold mt-6 mb-4 text-bone" {...props} />
     ),
     h2: (props: ComponentPropsWithoutRef<'h2'>) => (
-        <h2 className="text-xl font-bold mt-5 mb-3" {...props} />
+        <h2 className="font-display text-xl font-semibold mt-5 mb-3 text-bone" {...props} />
     ),
     h3: (props: ComponentPropsWithoutRef<'h3'>) => (
-        <h3 className="text-lg font-bold mt-4 mb-2" {...props} />
+        <h3 className="font-display text-lg font-semibold mt-4 mb-2 text-bone" {...props} />
     ),
     h4: (props: ComponentPropsWithoutRef<'h4'>) => (
-        <h4 className="text-base font-bold mt-3 mb-2" {...props} />
+        <h4 className="font-display text-base font-semibold mt-3 mb-2 text-bone" {...props} />
     ),
     h5: (props: ComponentPropsWithoutRef<'h5'>) => (
-        <h5 className="text-sm font-bold mt-2 mb-1" {...props} />
+        <h5 className="text-sm font-semibold mt-2 mb-1 text-bone" {...props} />
     ),
     h6: (props: ComponentPropsWithoutRef<'h6'>) => (
-        <h6 className="text-xs font-bold mt-2 mb-1" {...props} />
+        <h6 className="text-xs font-semibold mt-2 mb-1 text-bone" {...props} />
     ),
 
-    // Add blockquote component
     blockquote: (props: ComponentPropsWithoutRef<'blockquote'>) => (
         <blockquote
-            className="pl-4 border-l-4 border-gray-300 italic my-4 text-gray-700"
+            className="pl-4 border-l-2 border-hairline-strong italic my-4 text-muted"
             {...props}
         />
     ),
 
-    // Add table components for markdown tables
     table: (props: ComponentPropsWithoutRef<'table'>) => (
-        <div className="overflow-x-auto my-4">
-            <table className="min-w-full divide-y divide-gray-200" {...props} />
+        <div className="overflow-x-auto my-4 rounded-lg border border-hairline">
+            <table className="min-w-full divide-y divide-hairline" {...props} />
         </div>
     ),
     thead: (props: ComponentPropsWithoutRef<'thead'>) => (
-        <thead className="bg-gray-50" {...props} />
+        <thead className="bg-raised" {...props} />
     ),
     tbody: (props: ComponentPropsWithoutRef<'tbody'>) => (
-        <tbody className="bg-white divide-y divide-gray-200" {...props} />
+        <tbody className="divide-y divide-hairline" {...props} />
     ),
     tr: (props: ComponentPropsWithoutRef<'tr'>) => (
-        <tr className="hover:bg-gray-50" {...props} />
+        <tr className="hover:bg-surface" {...props} />
     ),
     th: (props: ComponentPropsWithoutRef<'th'>) => (
-        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" {...props} />
+        <th className="px-4 py-2.5 text-left font-mono text-[0.7rem] uppercase tracking-wider text-muted" {...props} />
     ),
     td: (props: ComponentPropsWithoutRef<'td'>) => (
-        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500" {...props} />
+        <td className="px-4 py-3 text-sm text-bone-dim" {...props} />
     ),
 
-    // Add horizontal rule
     hr: (props: ComponentPropsWithoutRef<'hr'>) => (
-        <hr className="my-6 border-t border-gray-300" {...props} />
+        <hr className="my-6 border-t border-hairline" {...props} />
     ),
 
-    // Support for divs
     div: (props: ComponentPropsWithoutRef<'div'>) => (
         <div {...props} />
     )

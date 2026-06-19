@@ -6,6 +6,7 @@ import { createContext, useContext, ReactNode } from 'react';
 // Network info interface
 export interface NetworkInfo {
     rpcUrl: string;
+    adminRpcUrl?: string;
     chainId: string;
     networkId?: string;
     name: string;

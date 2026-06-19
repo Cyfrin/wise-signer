@@ -11,9 +11,46 @@ import dynamic from 'next/dynamic';
 import { NetworkInfo, NetworkContextProvider } from '@/components/NetworkContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { buttonVariants } from '@/components/ui/Button';
 
 // Local storage key
 const NETWORK_INFO_KEY = "tenderlyNetworkInfo";
+
+// WalletConnect project id is a public client identifier (shipped in every dApp
+// bundle). Override per-deployment via NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID.
+const WALLETCONNECT_PROJECT_ID =
+    process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "b1625424c9a1da95a8e9b3b522996450";
+
+// Build the wagmi config once per unique network. Caching prevents
+// getDefaultConfig (and WalletConnect Core) from initializing twice under React
+// StrictMode's dev double-mount, which caused repeated connect popups.
+let cachedWagmiConfig: { key: string; config: Config } | null = null;
+function buildWagmiConfig(info: NetworkInfo): Config {
+    const chainId = parseInt(info.chainId, 16) || CUSTOM_CHAIN_ID;
+    const key = `${info.rpcUrl}|${chainId}`;
+    if (cachedWagmiConfig?.key === key) return cachedWagmiConfig.config;
+
+    const customChain = {
+        id: chainId,
+        name: info.name || VIRTUAL_NET_DISPLAY_NAME,
+        iconUrl: '/wise-signer.png',
+        iconBackground: '#fff',
+        nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+        rpcUrls: {
+            default: { http: [info.rpcUrl] },
+            public: { http: [info.rpcUrl] },
+        },
+    } as const satisfies Chain;
+
+    const config = getDefaultConfig({
+        appName: 'Wise Signer',
+        projectId: WALLETCONNECT_PROJECT_ID,
+        chains: [customChain],
+        ssr: false,
+    });
+    cachedWagmiConfig = { key, config };
+    return config;
+}
 
 // Dynamically import the Wagmi-related components with no SSR
 const WagmiProviders = dynamic<{
@@ -33,6 +70,17 @@ interface BasicLayoutProps {
     children: ReactNode;
 }
 
+// Defined at module scope so its identity is stable — redefining it inside the
+// component remounts the whole subtree (and re-inits wallet connectors) on every
+// render.
+const BasicLayout: React.FC<BasicLayoutProps> = ({ children }) => (
+    <>
+        <Header />
+        {children}
+        <Footer />
+    </>
+);
+
 export const NetworkProvider: React.FC<NetworkProviderProps> = ({
     children
 }) => {
@@ -49,7 +97,7 @@ export const NetworkProvider: React.FC<NetworkProviderProps> = ({
     // Determine page types based on pathname
     const isTenderlyPage = pathname?.startsWith('/tenderly') || false;
     const isSimulatedPage = pathname?.startsWith('/simulated') || false;
-    const isTenderlyQuestionsPage = pathname?.startsWith('/tenderly/questions') || false;
+    const isTenderlyChallengePage = pathname?.startsWith('/tenderly/challenge') || false;
     const isTenderlyWelcomePage = pathname === '/tenderly/welcome';
 
     // Mark as mounted after first render
@@ -84,51 +132,16 @@ export const NetworkProvider: React.FC<NetworkProviderProps> = ({
 
         const info = loadNetworkInfo();
 
-        if (info) {
+        // Only initialize wagmi/WalletConnect on the connected-wallet challenge
+        // pages — never on the landing/simulated pages, even if a network is saved.
+        if (info && isTenderlyChallengePage) {
             try {
-                // Configure the wagmi client with the custom chain
-                const customChain = {
-                    id: CUSTOM_CHAIN_ID,
-                    name: info.name || VIRTUAL_NET_DISPLAY_NAME,
-                    iconUrl: '/wise-signer.png',
-                    iconBackground: '#fff',
-                    nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-                    rpcUrls: {
-                        default: {
-                            http: [info.rpcUrl],
-                        },
-                        public: {
-                            http: [info.rpcUrl],
-                        }
-                    }
-                } as const satisfies Chain;
-
-                const config = getDefaultConfig({
-                    appName: 'Wise Signer',
-                    projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID!,
-                    chains: [customChain],
-                    ssr: false,
-                });
-
-                if (config) {
-                    setWagmiConfig(config);
-                } else {
-                    console.error("Failed to create wagmi config");
-                }
+                setWagmiConfig(buildWagmiConfig(info));
             } catch (error) {
                 console.error("Error creating wagmi config:", error);
             }
         }
-    }, [mounted]);
-
-    // Create a basic layout that will be consistent across server and client
-    const BasicLayout: React.FC<BasicLayoutProps> = ({ children }) => (
-        <>
-            <Header />
-            {children}
-            <Footer />
-        </>
-    );
+    }, [mounted, isTenderlyChallengePage]);
 
     // Create the network context value
     const networkContextValue = {
@@ -142,11 +155,7 @@ export const NetworkProvider: React.FC<NetworkProviderProps> = ({
         return (
             <NetworkContextProvider value={networkContextValue}>
                 <BasicLayout>
-                    <div className="flex items-center justify-center min-h-screen bg-zinc-900 text-white">
-                        <div className="text-center">
-                            <p className="text-zinc-400">Loading...</p>
-                        </div>
-                    </div>
+                    <div className="min-h-[60vh] bg-ink" />
                 </BasicLayout>
             </NetworkContextProvider>
         );
@@ -157,11 +166,7 @@ export const NetworkProvider: React.FC<NetworkProviderProps> = ({
         return (
             <NetworkContextProvider value={networkContextValue}>
                 <BasicLayout>
-                    <div className="flex items-center justify-center min-h-screen bg-zinc-900 text-white">
-                        <div className="text-center">
-                            <p className="text-zinc-400">Loading network config...</p>
-                        </div>
-                    </div>
+                    <div className="min-h-[60vh] bg-ink" />
                 </BasicLayout>
             </NetworkContextProvider>
         );
@@ -172,10 +177,8 @@ export const NetworkProvider: React.FC<NetworkProviderProps> = ({
         return (
             <NetworkContextProvider value={networkContextValue}>
                 <BasicLayout>
-                    <div className="flex items-center justify-center min-h-screen bg-zinc-900 text-white">
-                        <div className="text-center">
-                            <p className="text-zinc-400">Error: {error}</p>
-                        </div>
+                    <div className="flex min-h-[60vh] items-center justify-center bg-ink px-6">
+                        <p className="text-sm text-reject">Error: {error}</p>
                     </div>
                 </BasicLayout>
             </NetworkContextProvider>
@@ -194,22 +197,25 @@ export const NetworkProvider: React.FC<NetworkProviderProps> = ({
     }
 
     // If on questions page but no network info, show setup required
-    if ((!networkInfo || !wagmiConfig) && isTenderlyQuestionsPage) {
+    if ((!networkInfo || !wagmiConfig) && isTenderlyChallengePage) {
         return (
             <NetworkContextProvider value={networkContextValue}>
                 <BasicLayout>
-                    <div className="flex items-center justify-center min-h-screen bg-zinc-900 text-white p-8">
-                        <div className="bg-zinc-800 p-6 rounded-lg max-w-md text-center">
-                            <h2 className="text-xl font-semibold mb-4">Network Setup Required</h2>
-                            <p className="mb-6">
-                                To continue, you need to set up a Tenderly Virtual Network for safely practicing
-                                Ethereum transactions.
+                    <div className="flex min-h-[60vh] items-center justify-center bg-ink px-6 py-16">
+                        <div className="max-w-md rounded-xl border border-hairline bg-surface p-8 text-center">
+                            <h2 className="font-display text-xl font-semibold text-bone">
+                                Set up a test network
+                            </h2>
+                            <p className="mt-3 text-sm leading-relaxed text-bone-dim">
+                                Connected-wallet mode runs on a disposable Tenderly virtual
+                                network, so you can sign real transactions without risking
+                                real funds.
                             </p>
                             <a
                                 href="/tenderly/welcome"
-                                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition inline-block"
+                                className={`${buttonVariants({ variant: "primary" })} mt-6`}
                             >
-                                Set Up Network
+                                Set up network
                             </a>
                         </div>
                     </div>
@@ -219,7 +225,7 @@ export const NetworkProvider: React.FC<NetworkProviderProps> = ({
     }
 
     // For Tenderly question pages with network info and valid wagmi config
-    if (isTenderlyQuestionsPage && networkInfo && wagmiConfig) {
+    if (isTenderlyChallengePage && networkInfo && wagmiConfig) {
         // Critical: Use the dynamically imported Wagmi providers
         return (
             <NetworkContextProvider value={networkContextValue}>

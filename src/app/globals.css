@@ -1,50 +1,121 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+  Wise Signer — "Signer's Ledger" design tokens.
+  Warm dark instrument: deep ink surfaces, bone text, one brand blue
+  (from Cyfrin #155EEF), and green/red reserved for the SIGN / REJECT verdict.
+*/
+@theme {
+  /* Surfaces — deep warm ink, stepping up */
+  --color-ink: #0e1014;
+  --color-surface: #161a21;
+  --color-raised: #1e232c;
+  --color-overlay: #1a1f28;
+  --color-hairline: #2a2f3a;
+  --color-hairline-strong: #3b4250;
+
+  /* Text — warm bone scale */
+  --color-bone: #ede7d9;
+  --color-bone-dim: #c7c2b6;
+  --color-muted: #8e94a0;
+  --color-faint: #5c6370;
+
+  /* Brand — Cyfrin blue, tuned for dark */
+  --color-brand: #4c8dff;
+  --color-brand-strong: #2d7dff;
+  --color-brand-deep: #155eef;
+
+  /* Verdict — used only for sign / reject / mismatch */
+  --color-sign: #46c98a;
+  --color-sign-strong: #2fa76b;
+  --color-reject: #f2555a;
+  --color-reject-strong: #e03b41;
+
+  /* Caution — "look here / verify this", used sparingly */
+  --color-caution: #e8b339;
+
+  /* Typography roles */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, "SFMono-Regular", monospace;
+  --font-display: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    color-scheme: dark;
+  }
+
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Interactive controls get a pointer cursor */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [role="menuitem"],
+  summary,
+  label[for] {
+    cursor: pointer;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--color-brand) 32%, transparent);
+    color: var(--color-bone);
+  }
+
+  /* Visible keyboard focus everywhere */
+  :focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+
+  /* Instrument-grade scrollbars */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-hairline-strong) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-hairline-strong);
+    border-radius: 6px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-@media (max-width: 768px) {
-  .image-group {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .image-group img {
-    max-width: 100% !important;
-    margin: 0.5rem 0 !important;
+@layer components {
+  /* Mono field label — the hardware-readout caption used across the app */
+  .field-label {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    line-height: 1;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-muted);
   }
 }
 
-/* Optional hover effect for images */
-.image-group img:hover {
-  transform: scale(1.03);
-  transition: transform 0.2s ease;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-/* Container for side-by-side images */
+/* Markdown image helpers (used by react-markdown in feedback + guides) */
 .image-group {
   display: flex;
   flex-wrap: wrap;
@@ -54,44 +125,38 @@ body {
   margin: 1.5rem 0;
 }
 
-/* Control image size within paragraphs */
-p>img {
+.image-group img:hover {
+  transform: scale(1.03);
+  transition: transform 0.2s ease;
+}
+
+p > img {
   max-width: 30%;
   margin: 0.25rem;
-  border-radius: 0.375rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-hairline);
   vertical-align: middle;
   display: inline-block;
 }
 
-/* When there are multiple images in a paragraph, style them side-by-side */
-p>img+img {
-  margin-left: 0.5rem;
-}
-
-/* For standalone images, let them be larger */
-p>img:only-child {
+p > img:only-child {
   max-width: 75%;
   display: block;
   margin: 1rem auto;
 }
 
-/* Responsive adjustments */
 @media (max-width: 768px) {
-  p>img {
+  .image-group {
+    flex-direction: column;
+    align-items: center;
+  }
+  .image-group img {
+    max-width: 100% !important;
+    margin: 0.5rem 0 !important;
+  }
+  p > img {
     max-width: 100%;
     margin: 0.5rem 0;
     display: block;
   }
-
-  p>img+img {
-    margin-left: 0;
-  }
-}
-
-/* Optional hover effect */
-p>img:hover {
-  transform: scale(1.02);
-  transition: transform 0.2s ease;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }

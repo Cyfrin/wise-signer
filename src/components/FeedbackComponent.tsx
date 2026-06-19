@@ -1,95 +1,102 @@
 "use client";
 
 import { useState } from "react";
-import { FaLightbulb, FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { FaChevronLeft, FaChevronRight, FaCheck, FaTimes } from "react-icons/fa";
 import markdownComponents from "@/components/MarkdownComponents";
-import ReactMarkdown from 'react-markdown';
-
+import ReactMarkdown from "react-markdown";
+import { cn } from "@/components/ui/cn";
 
 interface FeedbackContent {
-    pages: string[];
+  pages: string[];
 }
 
 interface FeedbackComponentProps {
-    isCorrect: boolean;
-    feedbackContent: FeedbackContent;
-    initialPage?: number; // Optional prop to set which page to start on
-    className?: string; // Optional additional CSS classes
+  isCorrect: boolean;
+  feedbackContent: FeedbackContent;
+  initialPage?: number;
+  className?: string;
 }
 
 const FeedbackComponent: React.FC<FeedbackComponentProps> = ({
-    isCorrect,
-    feedbackContent,
-    initialPage = 1,
-    className = ""
+  isCorrect,
+  feedbackContent,
+  initialPage = 1,
+  className = "",
 }) => {
-    const [feedbackPage, setFeedbackPage] = useState(initialPage);
+  const [feedbackPage, setFeedbackPage] = useState(initialPage);
+  const totalPages = feedbackContent.pages.length;
 
-    // Navigation for feedback pages
-    const nextFeedbackPage = () => {
-        if (feedbackPage < feedbackContent.pages.length) {
-            setFeedbackPage(feedbackPage + 1);
-        }
-    };
-
-    const prevFeedbackPage = () => {
-        if (feedbackPage > 1) {
-            setFeedbackPage(feedbackPage - 1);
-        }
-    };
-
-
-    return (
-        <div className={isCorrect ? `bg-green-100 border border-green-500 rounded-lg p-6 ${className}`
-        : `bg-red-100 border border-red-500 rounded-lg p-6 ${className}`}>
-            <div className="flex items-start">
-                <FaLightbulb className="text-yellow-500 mt-1 flex-shrink-0" />
-                <div className="ml-4">
-                    <h3 className="text-lg font-medium text-gray-900">
-                        That's {isCorrect ? "correct" : "incorrect"}. Let's see why:
-                    </h3>
-
-                    <div className="mt-2 text-gray-700">
-                        <div>
-                            <ReactMarkdown components={markdownComponents}>
-                                {feedbackContent.pages[feedbackPage - 1]}
-                            </ReactMarkdown>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Only show pagination if there are multiple pages */}
-            {feedbackContent.pages.length > 1 && (
-                <div className="mt-6 flex items-center justify-between">
-                    <span className="text-sm text-gray-500">
-                        Page {feedbackPage} of {feedbackContent.pages.length}
-                    </span>
-
-                    <div className="flex space-x-2">
-                        {feedbackPage > 1 && (
-                            <button
-                                onClick={prevFeedbackPage}
-                                className="px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50 cursor-pointer"
-                            >
-                                <FaChevronLeft />
-                            </button>
-                        )}
-
-                        {feedbackPage < feedbackContent.pages.length && (
-                            <button
-                                onClick={nextFeedbackPage}
-                                 className = {isCorrect ? className="px-3 py-1 bg-green-500 rounded-md text-sm text-white hover:bg-green-700 cursor-pointer" 
-                                    : className="px-3 py-1 bg-red-500 rounded-md text-sm text-white hover:bg-red-700 cursor-pointer" } 
-                                >
-                                <FaChevronRight />
-                            </button>
-                        )}
-                    </div>
-                </div>
+  return (
+    <div
+      className={cn(
+        "overflow-hidden rounded-xl border bg-surface",
+        isCorrect ? "border-sign/40" : "border-reject/40",
+        className,
+      )}
+    >
+      <div
+        className={cn(
+          "flex items-center gap-3 border-b px-6 py-4",
+          isCorrect
+            ? "border-sign/20 bg-sign/10"
+            : "border-reject/20 bg-reject/10",
+        )}
+      >
+        <span
+          className={cn(
+            "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
+            isCorrect ? "bg-sign/15 text-sign" : "bg-reject/15 text-reject",
+          )}
+        >
+          {isCorrect ? <FaCheck size={15} /> : <FaTimes size={15} />}
+        </span>
+        <div>
+          <h3
+            className={cn(
+              "font-display text-base font-semibold",
+              isCorrect ? "text-sign" : "text-reject",
             )}
+          >
+            {isCorrect ? "Correct" : "Not quite"}
+          </h3>
+          <p className="text-xs text-muted">Here&apos;s what to notice</p>
         </div>
-    );
+      </div>
+
+      <div className="px-6 py-5">
+        <ReactMarkdown components={markdownComponents}>
+          {feedbackContent.pages[feedbackPage - 1]}
+        </ReactMarkdown>
+      </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between border-t border-hairline px-6 py-3">
+          <span className="field-label">
+            {feedbackPage} / {totalPages}
+          </span>
+
+          <div className="flex gap-2">
+            <button
+              onClick={() => setFeedbackPage((p) => Math.max(1, p - 1))}
+              disabled={feedbackPage === 1}
+              aria-label="Previous page"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-hairline text-bone-dim transition-colors hover:bg-raised hover:text-bone disabled:pointer-events-none disabled:opacity-40"
+            >
+              <FaChevronLeft size={12} />
+            </button>
+            <button
+              onClick={() => setFeedbackPage((p) => Math.min(totalPages, p + 1))}
+              disabled={feedbackPage === totalPages}
+              aria-label="Next page"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-hairline text-bone-dim transition-colors hover:bg-raised hover:text-bone disabled:pointer-events-none disabled:opacity-40"
+            >
+              <FaChevronRight size={12} />
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default FeedbackComponent;
